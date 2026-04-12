@@ -27,8 +27,7 @@
 		"fmt:check": "prettier --check .",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
-		"check": "svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
+		"typecheck": "tsc --noEmit",
 		"test": "vitest --run",
 		"test:watch": "vitest --silent --watch --ui"
 	},
