@@ -1,0 +1,56 @@
+{
+  "name": "devcontainer-check",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A GitHub App to automate validating your repositories' dev container configuration.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lasuillard-s/devcontainer-check.git"
+  },
+  "author": {
+    "name": "Yuchan Lee",
+    "url": "https://github.com/lasuillard",
+    "email": "lasuillard@gmail.com"
+  },
+  "homepage": "https://github.com/lasuillard-s/devcontainer-check",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec 'npm exec -- probot -- run ./dist/app.js'",
+    "build": "tsc",
+    "build:watch": "vite build --watch",
+    "fmt": "prettier --write .",
+    "fmt:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
+    "test": "vitest --run",
+    "test:watch": "vitest --silent --watch --ui"
+  },
+  "dependencies": {
+    "probot": "^13.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "nock": "^14.0.5",
+    "smee-client": "^2.0.0",
+    "vitest": "^2.0.0",
+    "typescript": "^6.0.2",
+    "@eslint/eslintrc": "3.3.5",
+    "@eslint/js": "10.0.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-jsdoc": "62.9.0",
+    "prettier": "3.8.2"
+  },
+  "overrides": {
+    "@types/pg": "8.15.1"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "type": "module"
+}
