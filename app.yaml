@@ -10,6 +10,19 @@
 # Read more about GitHub App Manifests:
 # https://developer.github.com/apps/building-github-apps/creating-github-apps-from-a-manifest/
 
+# The name of the GitHub App. Defaults to the name specified in package.json
+name: Dev Container Check
+
+# The homepage of your GitHub App.
+url: https://github.com/lasuillard-s/devcontainer-check
+
+# A description of the GitHub App.
+# description: A description of my awesome app
+
+# Set to true when your GitHub App is available to the public or false when it is only accessible to the owner of the app.
+# Default: true
+public: false
+
 # The list of events the GitHub App subscribes to.
 # Uncomment the event names below to enable them.
 default_events:
@@ -123,15 +136,3 @@ default_permissions:
   # Get notified of, and update, content references.
   # https://developer.github.com/v3/apps/permissions/
   # organization_administration: read
-# The name of the GitHub App. Defaults to the name specified in package.json
-# name: My Probot App
-
-# The homepage of your GitHub App.
-# url: https://example.com/
-
-# A description of the GitHub App.
-# description: A description of my awesome app
-
-# Set to true when your GitHub App is available to the public or false when it is only accessible to the owner of the app.
-# Default: true
-# public: false
