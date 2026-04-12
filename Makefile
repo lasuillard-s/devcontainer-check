@@ -31,7 +31,7 @@ update:  ## Update deps and tools
 .PHONY: update
 
 run:  ## Run the app
-	npm run dev
+	npm run dev:watch
 .PHONY: run
 
 
