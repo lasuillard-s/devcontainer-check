@@ -19,9 +19,10 @@
     "probot-app"
   ],
   "scripts": {
-    "dev": "nodemon --watch src --ext ts --exec 'npm exec -- probot -- run ./dist/app.js'",
+    "dev": "probot -- run ./dist/app.js",
+    "dev:watch": "nodemon --watch ./src --ext js,ts --exec 'npm run build && npm run dev'",
     "build": "tsc",
-    "build:watch": "vite build --watch",
+    "build:watch": "tsc --watch",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
     "lint": "eslint .",
@@ -35,16 +36,17 @@
     "probot": "^13.4.5"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "nock": "^14.0.5",
-    "smee-client": "^2.0.0",
-    "vitest": "^2.0.0",
-    "typescript": "^6.0.2",
     "@eslint/eslintrc": "3.3.5",
     "@eslint/js": "10.0.1",
+    "@types/node": "^20.0.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-jsdoc": "62.9.0",
-    "prettier": "3.8.2"
+    "nock": "^14.0.5",
+    "nodemon": "^3.1.14",
+    "prettier": "3.8.2",
+    "smee-client": "^2.0.0",
+    "typescript": "^6.0.2",
+    "vitest": "^2.0.0"
   },
   "overrides": {
     "@types/pg": "8.15.1"
