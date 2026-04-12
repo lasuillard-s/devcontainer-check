@@ -9,7 +9,7 @@ on:
         required: false
         default: ''
 
-      repository:
+      repo:
         description: Repository to check dev container configuration for
         type: string
         required: true
@@ -21,8 +21,9 @@ on:
         default: ''
 
 concurrency:
-  group: ${{ github.workflow }}/${{ github.event.inputs.owner }}/${{ github.event.inputs.repository }}
-  cancel-in-progress: false
+  # Single workflow run per repository/branch
+  group: ${{ github.workflow }}/${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }}@${{ github.event.inputs.ref || 'default-branch' }}
+  cancel-in-progress: true
 
 jobs:
   dev-container-check:
@@ -35,16 +36,16 @@ jobs:
         id: get-token
         uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
         with:
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
           app-id: ${{ secrets.APP_ID }}
           owner: ${{ github.event.inputs.owner }}
-          repositories: ${{ github.event.inputs.repository }}
+          repositories: ${{ github.event.inputs.repo }}
 
-      - name: Checkout
+      - name: Checkout ${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }} (${{ github.event.inputs.ref || 'default branch' }})
         id: checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          repository: ${{ github.event.inputs.owner }}/${{ github.event.inputs.repository }}
+          repository: ${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }}
           ref: ${{ github.event.inputs.ref || '' }}
           token: ${{ steps.get-token.outputs.token }}
           fetch-depth: 1 # Only fetch the latest commit to speed up the workflow
@@ -55,7 +56,7 @@ jobs:
           echo "TARGET_OWNER=${{ github.event.inputs.owner || github.repository_owner }}" >> $GITHUB_ENV
 
           # Target repository name (without owner)
-          echo "TARGET_REPOSITORY=${{ github.event.inputs.repository }}" >> $GITHUB_ENV
+          echo "TARGET_REPOSITORY=${{ github.event.inputs.repo }}" >> $GITHUB_ENV
 
           # Latest commit SHA of the checked-out branch
           echo "COMMIT_SHA=${{ steps.checkout.outputs.commit }}" >> $GITHUB_ENV
