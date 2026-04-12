@@ -65,6 +65,8 @@ default_events:
 # the value (for example, write).
 # Valid values are `read`, `write`, and `none`
 default_permissions:
+  actions: write
+
   # Repository creation, deletion, settings, teams, and collaborators.
   # https://developer.github.com/v3/apps/permissions/#permission-on-administration
   # administration: read
@@ -111,7 +113,7 @@ default_permissions:
 
   # Commit statuses.
   # https://developer.github.com/v3/apps/permissions/#permission-on-statuses
-  # statuses: read
+  statuses: write
 
   # Organization members and teams.
   # https://developer.github.com/v3/apps/permissions/#permission-on-members

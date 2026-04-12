@@ -1,6 +1,6 @@
 {
 	"name": "devcontainer-check",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"private": true,
 	"description": "A GitHub App to automate validating your repository dev container configuration.",
 	"repository": {
