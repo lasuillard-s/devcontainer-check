@@ -2,7 +2,7 @@
   "name": "devcontainer-check",
   "version": "1.0.0",
   "private": true,
-  "description": "A GitHub App to automate validating your repositories' dev container configuration.",
+  "description": "A GitHub App to automate validating your repository dev container configuration.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lasuillard-s/devcontainer-check.git"
