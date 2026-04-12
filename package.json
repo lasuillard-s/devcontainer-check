@@ -19,7 +19,7 @@
 		"probot-app"
 	],
 	"scripts": {
-		"dev": "probot -- run ./dist/app.js",
+		"dev": "probot -- run ./dist/src/app.js",
 		"dev:watch": "nodemon --watch ./src --ext js,ts --exec 'npm run build && npm run dev'",
 		"build": "tsc",
 		"build:watch": "tsc --watch",
