@@ -7,7 +7,7 @@ on:
         description: Owner of the repository to check dev container configuration for (defaults to the current repository owner)
         type: string
         required: false
-        default: ""
+        default: ''
 
       repository:
         description: Repository to check dev container configuration for
@@ -18,10 +18,10 @@ on:
         description: Branch, tag or commit SHA to check (defaults to the default branch)
         type: string
         required: false
-        default: ""
+        default: ''
 
 concurrency:
-  group: ${{ github.workflow }}/${{ github.event.inputs.repository }}
+  group: ${{ github.workflow }}/${{ github.event.inputs.owner }}/${{ github.event.inputs.repository }}
   cancel-in-progress: false
 
 jobs:

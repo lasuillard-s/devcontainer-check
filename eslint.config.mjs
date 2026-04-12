@@ -6,15 +6,11 @@ import ts from 'typescript-eslint';
 
 export default ts.config(
 	{
-		ignores: [
-			'coverage/*',
-			'test-results/*',
-			'dist/*',
-		]
+		ignores: ['coverage/*', 'test-results/*', 'dist/*']
 	},
 	js.configs.recommended,
 	...ts.configs.recommended,
 	prettier,
 	jsdoc.configs['flat/recommended-typescript'],
-	{ languageOptions: { globals: { ...globals.browser, ...globals.node } } },
+	{ languageOptions: { globals: { ...globals.browser, ...globals.node } } }
 );
