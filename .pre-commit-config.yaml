@@ -17,27 +17,27 @@ repos:
         name: prettier
         language: system
         types_or: [javascript, ts, json, yaml]
-        entry: yarn run prettier
-        args: [--write]
+        entry: npm exec prettier
+        args: [--, --write]
 
       - id: eslint
         name: eslint
         language: system
         types_or: [javascript, ts]
-        entry: yarn run eslint
-        args: [--fix]
+        entry: npm exec eslint
+        args: [--, --fix]
 
       - id: typescript
         name: typescript
         language: system
         types_or: [javascript, ts]
         pass_filenames: false
-        entry: yarn run tsc
-        args: [--noEmit]
+        entry: npm exec tsc
+        args: [--, --noEmit]
 
       - id: vitest
         name: vitest
         language: system
         types_or: [javascript, ts]
         pass_filenames: false
-        entry: yarn run test
+        entry: npm exec test

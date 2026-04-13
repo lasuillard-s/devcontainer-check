@@ -55,6 +55,9 @@ cd devcontainer-check
 # Install the dependencies (`npm install`)
 npm install
 
+# Build the application
+npm run build
+
 # Run the development server
 npm run dev
 ```
