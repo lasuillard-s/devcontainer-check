@@ -1,6 +1,5 @@
 import nock from 'nock';
-import { beforeEach } from 'node:test';
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 
 beforeEach(() => {
 	nock.disableNetConnect();
