@@ -1,0 +1,6 @@
+{
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"[json][jsonc][yaml][dockercompose]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	}
+}
