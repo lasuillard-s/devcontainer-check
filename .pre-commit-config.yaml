@@ -32,12 +32,11 @@ repos:
         language: system
         types_or: [javascript, ts]
         pass_filenames: false
-        entry: npm exec tsc
-        args: [--, --noEmit]
+        entry: npm run typecheck
 
       - id: vitest
         name: vitest
         language: system
         types_or: [javascript, ts]
         pass_filenames: false
-        entry: npm exec test
+        entry: npm run test

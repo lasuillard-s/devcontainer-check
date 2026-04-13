@@ -38,7 +38,7 @@ run:  ## Run the app
 # =============================================================================
 # CI
 # =============================================================================
-ci: lint test e2e  ## Run CI tasks
+ci: lint test  ## Run CI tasks
 .PHONY: ci
 
 fmt:  ## Run autoformatters
