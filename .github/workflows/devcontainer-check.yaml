@@ -1,5 +1,5 @@
 name: Dev Container Check
-run-name: Check ${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }}@${{ github.event.inputs.ref || '~DEFAULT_BRANCH' }}
+run-name: Check ${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.ref || '~DEFAULT_BRANCH' }}
 
 on:
   workflow_dispatch:
@@ -22,32 +22,41 @@ on:
 
 concurrency:
   # Single workflow run per repository/branch
-  group: ${{ github.workflow }}/${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }}@${{ github.event.inputs.ref || '~DEFAULT_BRANCH' }}
+  group: ${{ github.workflow }}/${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.ref || '~DEFAULT_BRANCH' }}
   cancel-in-progress: true
 
 jobs:
   check:
-    name: check (${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }}@${{ github.event.inputs.ref || '~DEFAULT_BRANCH' }})
+    name: check
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read
     steps:
+      - name: Save workflow inputs
+        run: echo '${{ toJSON(inputs) }}' > inputs.json
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: workflow-inputs
+          path: inputs.json
+          retention-days: 1
+
       - name: Get application token
         id: get-token
         uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
         with:
           private-key: ${{ secrets.PRIVATE_KEY }}
           app-id: ${{ secrets.APP_ID }}
-          owner: ${{ github.event.inputs.owner }}
-          repositories: ${{ github.event.inputs.repo }}
+          owner: ${{ inputs.owner }}
+          repositories: ${{ inputs.repo }}
 
       - name: Checkout
         id: checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          repository: ${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }}
-          ref: ${{ github.event.inputs.ref || '' }}
+          repository: ${{ inputs.owner }}/${{ inputs.repo }}
+          ref: ${{ inputs.ref || '' }}
           token: ${{ steps.get-token.outputs.token }}
           fetch-depth: 1 # Only fetch the latest commit to speed up the workflow
 
