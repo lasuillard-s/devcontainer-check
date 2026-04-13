@@ -1,3 +1,4 @@
+import AdmZip from 'adm-zip';
 import type { ProbotOctokit } from 'probot';
 
 export interface CreateWorkflowDispatchResult {
@@ -45,4 +46,60 @@ export async function createWorkflowDispatch(
 		return data as undefined;
 	}
 	return data as unknown as CreateWorkflowDispatchResult;
+}
+
+/**
+ * Downloads a specific artifact, extracts it in-memory, and retrieves the content of a specific file within the artifact, parsing it as JSON.
+ * @param octokit Octokit instance to use for API calls
+ * @param params Parameters for the artifact download
+ * @param params.owner Repository owner
+ * @param params.repo Repository name
+ * @param params.workflowRunId ID of the workflow run to get artifacts from
+ * @param params.artifactName Name of the artifact to download
+ * @param params.filePath Path to the file within the artifact to retrieve and parse as JSON
+ * @returns The parsed content of the specified file within the artifact, or null if the artifact or file is not found
+ */
+export async function downloadArtifactFileJSON<ParseAs>(
+	octokit: ProbotOctokit,
+	params: {
+		owner: string;
+		repo: string;
+		workflowRunId: number;
+		artifactName: string;
+		filePath: string;
+	}
+): Promise<ParseAs | null> {
+	const { owner, repo, workflowRunId, artifactName, filePath } = params;
+
+	// List artifacts for the workflow run and find the one with the specified name
+	const allArtifacts = await octokit.actions.listWorkflowRunArtifacts({
+		owner,
+		repo,
+		run_id: workflowRunId
+	});
+	const artifact = allArtifacts.data.artifacts.find((a) => a.name === artifactName);
+	if (!artifact) {
+		return null;
+	}
+
+	// Download and extract the artifact to get the workflow inputs
+	const { data } = (await octokit.actions.downloadArtifact({
+		owner,
+		repo,
+		artifact_id: artifact.id,
+		archive_format: 'zip',
+		request: {
+			redirect: 'follow'
+		}
+	})) as unknown as { data: ArrayBuffer };
+
+	// Find the specified file in the artifact zip and parse its content as JSON
+	const buffer = Buffer.from(data);
+	const zip = new AdmZip(buffer);
+	const file = zip.getEntries().find((entry) => entry.entryName === filePath);
+	if (!file) {
+		return null;
+	}
+	const content = file.getData().toString('utf-8');
+	return JSON.parse(content) as ParseAs;
 }
