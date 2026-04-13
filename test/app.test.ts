@@ -18,7 +18,7 @@ describe('My Probot app', () => {
 
 	beforeEach(() => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
-		vi.stubEnv('CHECK_WORKFLOW_ID', 'devcontainer-check.yaml');
+		vi.stubEnv('CHECK_WORKFLOW_NAME', 'devcontainer-check.yaml');
 		vi.stubEnv('CHECK_WORKFLOW_REF', undefined);
 		probot = new Probot({
 			appId: 123,
@@ -50,12 +50,27 @@ describe('My Probot app', () => {
 							owner: 'devcontainer-check-org',
 							repo: 'devcontainer-check',
 							ref: 'refs/heads/setup-devenv'
-						}
+						},
+						return_run_details: true
 					});
 					return true;
 				}
 			)
-			.reply(204);
+			.reply(204, {
+				html_url: ''
+			})
+			.post(
+				`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
+				(body: unknown) => {
+					expect(body).toStrictEqual({
+						state: 'pending',
+						context: 'Dev Container Check',
+						description: 'Checking for dev container configuration...'
+					});
+					return true;
+				}
+			)
+			.reply(201);
 
 		await probot.receive({ id: '', name: 'push', payload });
 

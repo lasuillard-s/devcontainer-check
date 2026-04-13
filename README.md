@@ -17,10 +17,11 @@ sequenceDiagram
   target ->> server: Push events
   server ->> server: Check if dev container configuration changed
   server ->> runner: Trigger workflow (workflow_dispatch)
-  runner ->> runner: Validate dev container
-  runner ->> target: Update commit statuses (started)
-  runner ->> runner: Build and test dev container
-  runner ->> target: Update commit statuses (completed)
+  server ->> target: Update commit statuses (pending)
+  runner ->> target: Checkout repository
+  runner ->> runner: Check dev container configuration
+  runner ->> server: workflow_run.completed event
+  server ->> target: Update commit statuses (success or failure)
 ```
 
 - **Why use GitHub Actions?**
@@ -30,12 +31,6 @@ sequenceDiagram
 - **Why must I self-host this app?**
 
   We have no infrastructure to run the tasks. If we make it public for unlimited CI minutes, there is security risk of leaking repository contents.
-
-- **Why update commit statuses in the workflow?**
-
-  We have no database to simplify the app implementation.
-
-  We are planning to improve the implementation with key-value stores that offer reasonable free-tier plans to simplify the installation by removing app credentials from the repository, used by check workflow.
 
 ## ⚙️ Getting Started
 
@@ -72,6 +67,8 @@ Go to repository **Settings** > **Security and Quality** > **Secrets and variabl
 
 - **APP_ID**: GitHub App ID
 - **PRIVATE_KEY** GitHub App private key
+
+This is required for runner repository to checkout the repository in the check workflow.
 
 ### 🚀 Deploy to Vercel
 

@@ -16,19 +16,19 @@ describe('loadConfig', () => {
 
 		expect(loadConfig(probot)).toStrictEqual({
 			RUNNER_REPOSITORY: 'acme/devcontainer-check-runner',
-			CHECK_WORKFLOW_ID: 'devcontainer-check.yaml',
+			CHECK_WORKFLOW_NAME: 'devcontainer-check.yaml',
 			CHECK_WORKFLOW_REF: null
 		});
 	});
 
 	test('loads valid config with explicit workflow values', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
-		vi.stubEnv('CHECK_WORKFLOW_ID', 'custom-check.yaml');
+		vi.stubEnv('CHECK_WORKFLOW_NAME', 'custom-check.yaml');
 		vi.stubEnv('CHECK_WORKFLOW_REF', 'release-1');
 
 		expect(loadConfig(probot)).toStrictEqual({
 			RUNNER_REPOSITORY: 'acme/devcontainer-check-runner',
-			CHECK_WORKFLOW_ID: 'custom-check.yaml',
+			CHECK_WORKFLOW_NAME: 'custom-check.yaml',
 			CHECK_WORKFLOW_REF: 'release-1'
 		});
 	});
