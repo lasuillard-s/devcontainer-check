@@ -12,6 +12,7 @@ export default defineConfig({
 			include: ['src/**'],
 			exclude: ['src/**/*.d.ts', 'src/**/*.test.ts'],
 			reporter: ['text', 'clover', 'html']
-		}
+		},
+		setupFiles: ['test/setup.ts']
 	}
 });

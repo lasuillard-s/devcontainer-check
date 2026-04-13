@@ -32,7 +32,8 @@
 		"test:watch": "vitest --silent --watch"
 	},
 	"dependencies": {
-		"probot": "^13.4.5"
+		"probot": "^13.4.5",
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "3.3.5",
