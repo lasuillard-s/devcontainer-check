@@ -17,7 +17,9 @@ describe('loadConfig', () => {
 		expect(loadConfig(probot)).toStrictEqual({
 			RUNNER_REPOSITORY: 'acme/devcontainer-check-runner',
 			CHECK_WORKFLOW_NAME: 'devcontainer-check.yaml',
-			CHECK_WORKFLOW_REF: null
+			CHECK_WORKFLOW_REF: null,
+			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'workflow-inputs',
+			CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: 'inputs.json'
 		});
 	});
 
@@ -29,7 +31,9 @@ describe('loadConfig', () => {
 		expect(loadConfig(probot)).toStrictEqual({
 			RUNNER_REPOSITORY: 'acme/devcontainer-check-runner',
 			CHECK_WORKFLOW_NAME: 'custom-check.yaml',
-			CHECK_WORKFLOW_REF: 'release-1'
+			CHECK_WORKFLOW_REF: 'release-1',
+			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'workflow-inputs',
+			CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: 'inputs.json'
 		});
 	});
 

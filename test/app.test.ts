@@ -41,6 +41,16 @@ describe('devcontainer-check app', () => {
 					actions: 'write'
 				}
 			})
+			.get(
+				`/repos/devcontainer-check-org/devcontainer-check/compare/${payload.before}...${payload.after}`
+			)
+			.reply(200, {
+				files: [
+					{ filename: '.devcontainer.example/devcontainer.json', status: 'modified' },
+					{ filename: '.devcontainer.example/onCreateCommand.sh', status: 'added' },
+					{ filename: '.env.example', status: 'modified' }
+				]
+			})
 			.post(
 				'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches',
 				(body: unknown) => {
@@ -90,6 +100,19 @@ describe('devcontainer-check app', () => {
 		);
 
 		const mock = nock('https://api.github.com')
+			.post(`/app/installations/${installationId}/access_tokens`)
+			.reply(200, {
+				token: 'test',
+				permissions: {
+					actions: 'write'
+				}
+			})
+			.get(
+				`/repos/devcontainer-check-org/devcontainer-check/compare/${payload.before}...${payload.after}`
+			)
+			.reply(200, {
+				files: [{ filename: 'package.json', status: 'modified' }]
+			})
 			.post(
 				'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
 			)
