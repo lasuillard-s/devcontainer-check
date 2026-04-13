@@ -13,7 +13,7 @@ const privateKey = fs.readFileSync(path.join(__dirname, 'fixtures/mock-cert.pem'
 const payload = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/push.json'), 'utf-8'));
 const installationId: number = payload.installation.id;
 
-describe('My Probot app', () => {
+describe('devcontainer-check app', () => {
 	let probot: Probot;
 
 	beforeEach(() => {

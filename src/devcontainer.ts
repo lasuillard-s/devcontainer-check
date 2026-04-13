@@ -1,4 +1,4 @@
-import { Context } from 'probot';
+import type { Context } from 'probot';
 
 /**
  * Checks if any of the changed files are related to devcontainer configuration.
