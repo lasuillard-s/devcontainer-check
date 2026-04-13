@@ -29,7 +29,7 @@
 		"lint:fix": "eslint --fix .",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest --run",
-		"test:watch": "vitest --silent --watch --ui"
+		"test:watch": "vitest --silent --watch"
 	},
 	"dependencies": {
 		"probot": "^13.4.5"
@@ -41,6 +41,7 @@
 		"@vitest/coverage-v8": "^2.1.9",
 		"eslint-config-prettier": "10.1.8",
 		"eslint-plugin-jsdoc": "62.9.0",
+		"globals": "^17.5.0",
 		"nock": "^14.0.5",
 		"nodemon": "^3.1.14",
 		"prettier": "3.8.2",

@@ -4,7 +4,7 @@ import jsdoc from 'eslint-plugin-jsdoc';
 import globals from 'globals';
 import ts from 'typescript-eslint';
 
-export default ts.config(
+export default [
 	{
 		ignores: ['coverage/*', 'test-results/*', 'dist/*']
 	},
@@ -12,5 +12,5 @@ export default ts.config(
 	...ts.configs.recommended,
 	prettier,
 	jsdoc.configs['flat/recommended-typescript'],
-	{ languageOptions: { globals: { ...globals.browser, ...globals.node } } }
-);
+	{ languageOptions: { globals: { ...globals.node } } }
+];
