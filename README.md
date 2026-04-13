@@ -62,13 +62,13 @@ npm run build
 npm run dev
 ```
 
-Then visit to the http://localhost:3000 to creates GitHub App with Probot's app registration helper.
+Then visit http://localhost:3000 to create a GitHub App with Probot's app registration helper.
 
 ![Probot Landing](docs/probot-landing.png)
 
 ### 🚧 Workflow configurations
 
-Go to repository **Settings** > **Security and Quality** > **Secrets and variables** > **Actions** and add below variables ad **Repository secrets**:
+Go to repository **Settings** > **Security and Quality** > **Secrets and variables** > **Actions** and add below variables as **Repository secrets**:
 
 - **APP_ID**: GitHub App ID
 - **PRIVATE_KEY** GitHub App private key
