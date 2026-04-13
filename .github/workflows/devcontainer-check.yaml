@@ -17,11 +17,11 @@ on:
         description: Branch, tag or commit SHA to check (defaults to the default branch)
         type: string
         required: false
-        default: ''
+        default: ""
 
 concurrency:
   # Single workflow run per repository/branch
-  group: ${{ github.workflow }}/${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }}@${{ github.event.inputs.ref || 'default-branch' }}
+  group: ${{ github.workflow }}/${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.ref || 'default-branch' }}
   cancel-in-progress: true
 
 jobs:
@@ -31,31 +31,40 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Save workflow inputs
+        run: echo '${{ toJSON(inputs) }}' > inputs.json
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: workflow-inputs
+          path: inputs.json
+          retention-days: 1
+
       - name: Get application token
         id: get-token
         uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
         with:
           private-key: ${{ secrets.PRIVATE_KEY }}
           app-id: ${{ secrets.APP_ID }}
-          owner: ${{ github.event.inputs.owner }}
-          repositories: ${{ github.event.inputs.repo }}
+          owner: ${{ inputs.owner }}
+          repositories: ${{ inputs.repo }}
 
-      - name: Checkout ${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }} (${{ github.event.inputs.ref || 'default branch' }})
+      - name: Checkout ${{ inputs.owner }}/${{ inputs.repo }} (${{ inputs.ref || 'default branch' }})
         id: checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          repository: ${{ github.event.inputs.owner }}/${{ github.event.inputs.repo }}
-          ref: ${{ github.event.inputs.ref || '' }}
+          repository: ${{ inputs.owner }}/${{ inputs.repo }}
+          ref: ${{ inputs.ref || '' }}
           token: ${{ steps.get-token.outputs.token }}
           fetch-depth: 1 # Only fetch the latest commit to speed up the workflow
 
       - name: Define target repository context as environment variable
         run: |
           # Target repository owner
-          echo "TARGET_OWNER=${{ github.event.inputs.owner }}" >> $GITHUB_ENV
+          echo "TARGET_OWNER=${{ inputs.owner }}" >> $GITHUB_ENV
 
           # Target repository name (without owner)
-          echo "TARGET_REPOSITORY=${{ github.event.inputs.repo }}" >> $GITHUB_ENV
+          echo "TARGET_REPOSITORY=${{ inputs.repo }}" >> $GITHUB_ENV
 
           # Latest commit SHA of the checked-out branch
           echo "COMMIT_SHA=${{ steps.checkout.outputs.commit }}" >> $GITHUB_ENV
