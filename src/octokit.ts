@@ -43,7 +43,7 @@ export async function createWorkflowDispatch(
 ): Promise<CreateWorkflowDispatchResult | undefined> {
 	const { data } = await octokit.actions.createWorkflowDispatch(params);
 	if (!params?.return_run_details) {
-		return data as undefined;
+		return undefined;
 	}
 	return data as unknown as CreateWorkflowDispatchResult;
 }
