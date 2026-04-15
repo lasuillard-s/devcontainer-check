@@ -9,7 +9,7 @@ const COMMIT_STATUS_CONTEXT = 'Dev Container Check';
 
 /** Helper type to extract the correct type for the files array in the response. */
 type DiffEntries = Awaited<
-	ReturnType<ProbotOctokit['repos']['compareCommitsWithBasehead']>
+	ReturnType<ProbotOctokit['rest']['repos']['compareCommitsWithBasehead']>
 >['data']['files'];
 
 /**
@@ -40,7 +40,7 @@ export default ((app) => {
 		// Collect all changed files from the push event
 		let changedFiles: string[] = [];
 		for await (const response of octokit.paginate.iterator(
-			octokit.repos.compareCommitsWithBasehead,
+			octokit.rest.repos.compareCommitsWithBasehead,
 			{
 				...repo,
 				basehead: `${payload.before}...${payload.after}`
@@ -85,7 +85,7 @@ export default ((app) => {
 		const workflowRunUrl = workflowDispatchResult?.html_url;
 
 		// Update commit status to pending with a link to the workflow run
-		await octokit.repos.createCommitStatus({
+		await octokit.rest.repos.createCommitStatus({
 			...repo,
 			sha: payload.after,
 			state: 'pending',
@@ -106,7 +106,11 @@ export default ((app) => {
 			repo.owner !== runnerRepo.owner ||
 			repo.repo !== runnerRepo.repo ||
 			// ? Match the workflow by file name instead of ID to allow users to customize the workflow file name
-			path.basename(payload.workflow.path) !== appConfig.CHECK_WORKFLOW_NAME
+			path.basename(
+				// * Workflow path could be null in some cases, but not clear under which circumstances.
+				// * For now, we will treat null as non-matching workflow to avoid potential issues.
+				payload.workflow?.path ?? ''
+			) !== appConfig.CHECK_WORKFLOW_NAME
 		) {
 			log.debug(
 				`Workflow run completed for ${payload.repository.full_name}, which does not match the configured runner repository. Ignoring event.`
@@ -131,7 +135,7 @@ export default ((app) => {
 		// Update the commit status based on the workflow run conclusion
 		const targetRepo = { owner: inputs.owner, repo: inputs.repo };
 		const state = payload.workflow_run.conclusion === 'success' ? 'success' : 'failure';
-		await octokit.repos.createCommitStatus({
+		await octokit.rest.repos.createCommitStatus({
 			...targetRepo,
 			sha: inputs.sha,
 			state,
