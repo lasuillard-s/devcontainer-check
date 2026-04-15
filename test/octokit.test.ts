@@ -149,4 +149,42 @@ describe('downloadArtifactFileJSON', () => {
 			ref: 'deadbeef'
 		});
 	});
+
+	test('parses and returns JSON from requested file in subdirectory of artifact zip', async () => {
+		// Arrange
+		const octokit = createMockOctokit();
+		vi.mocked(octokit.actions.listWorkflowRunArtifacts).mockResolvedValue({
+			data: {
+				artifacts: [{ id: 42, name: 'workflow-inputs' }]
+			}
+		} as never);
+		const zip = new AdmZip();
+		zip.addFile(
+			'subdirectory/inputs.json',
+			Buffer.from(JSON.stringify({ owner: 'target-org', repo: 'target-repo', ref: 'deadbeef' }))
+		);
+		vi.mocked(octokit.actions.downloadArtifact).mockResolvedValue({
+			data: zip.toBuffer()
+		} as never);
+
+		// Act
+		const result = await downloadArtifactFileJSON<{
+			owner: string;
+			repo: string;
+			ref: string;
+		}>(octokit, {
+			owner: 'example-org',
+			repo: 'runner-repo',
+			workflowRunId: 123456789,
+			artifactName: 'workflow-inputs',
+			filePath: 'subdirectory/inputs.json'
+		});
+
+		// Assert
+		expect(result).toStrictEqual({
+			owner: 'target-org',
+			repo: 'target-repo',
+			ref: 'deadbeef'
+		});
+	});
 });

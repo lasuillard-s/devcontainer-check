@@ -18,7 +18,12 @@ export const AppConfig = z.object({
 	CHECK_WORKFLOW_REF: z.string().nullable().default(null),
 	/** Name of the artifact containing the workflow inputs */
 	CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: z.string().nonempty().default('workflow-inputs'),
-	/** Path to the inputs file within the artifact */
+	/**
+	 * Path to the inputs file within the artifact.
+	 *
+	 * If the file is located at the subdirectory `path/inputs.json` in the artifact, this should be set to `path/inputs.json`.
+	 * Otherwise, if the file is located at the root of the artifact, this should be set to `inputs.json`.
+	 */
 	CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: z.string().nonempty().default('inputs.json')
 });
 export type AppConfig = z.infer<typeof AppConfig>;
