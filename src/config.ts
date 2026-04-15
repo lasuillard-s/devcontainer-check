@@ -1,5 +1,6 @@
 import type { Probot } from 'probot';
 import * as z from 'zod';
+import { errorToString } from './utils.js';
 
 export const AppConfig = z.object({
 	/** Full name (owner/repo) of the repository where the runner workflow is defined. */
@@ -37,7 +38,7 @@ export function loadConfig(app: Probot): AppConfig {
 	try {
 		return AppConfig.parse(process.env);
 	} catch (error) {
-		app.log.error(`Failed to load configuration: ${error}`);
+		app.log.error(`Failed to load configuration: ${errorToString(error)}`);
 		process.exit(1);
 	}
 }

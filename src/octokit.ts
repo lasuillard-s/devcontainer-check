@@ -1,5 +1,6 @@
 import AdmZip from 'adm-zip';
 import type { ProbotOctokit } from 'probot';
+import { errorToString } from './utils.js';
 
 export interface CreateWorkflowDispatchResult {
 	html_url: string;
@@ -101,5 +102,11 @@ export async function downloadArtifactFileJSON<ParseAs>(
 		return null;
 	}
 	const content = file.getData().toString('utf-8');
-	return JSON.parse(content) as ParseAs;
+	try {
+		return JSON.parse(content) as ParseAs;
+	} catch (error) {
+		throw new Error(`Failed to parse JSON content from artifact file: ${errorToString(error)}`, {
+			cause: error
+		});
+	}
 }
