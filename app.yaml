@@ -17,7 +17,7 @@ name: Dev Container Check
 url: https://github.com/lasuillard-s/devcontainer-check
 
 # A description of the GitHub App.
-# description: A description of my awesome app
+description: A GitHub App to automate validating your repositories' dev container configuration.
 
 # Set to true when your GitHub App is available to the public or false when it is only accessible to the owner of the app.
 # Default: true
