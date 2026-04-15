@@ -10,19 +10,19 @@ export interface CreateWorkflowDispatchResult {
 
 export async function createWorkflowDispatch(
 	octokit: ProbotOctokit,
-	params: Parameters<ProbotOctokit['actions']['createWorkflowDispatch']>[0] & {
+	params: Parameters<ProbotOctokit['rest']['actions']['createWorkflowDispatch']>[0] & {
 		return_run_details: false;
 	}
 ): Promise<undefined>;
 export async function createWorkflowDispatch(
 	octokit: ProbotOctokit,
-	params: Parameters<ProbotOctokit['actions']['createWorkflowDispatch']>[0] & {
+	params: Parameters<ProbotOctokit['rest']['actions']['createWorkflowDispatch']>[0] & {
 		return_run_details: true;
 	}
 ): Promise<CreateWorkflowDispatchResult>;
 
 /**
- * Wrapper around `octokit.actions.createWorkflowDispatch` for better type safety.
+ * Wrapper around `octokit.rest.actions.createWorkflowDispatch` for better type safety.
  *
  * GitHub added new parameter `return_run_details` to the `createWorkflowDispatch` API
  * in February 2026, which allows returning the created workflow run details in the response.
@@ -38,11 +38,11 @@ export async function createWorkflowDispatch(
  */
 export async function createWorkflowDispatch(
 	octokit: ProbotOctokit,
-	params: Parameters<ProbotOctokit['actions']['createWorkflowDispatch']>[0] & {
+	params: Parameters<ProbotOctokit['rest']['actions']['createWorkflowDispatch']>[0] & {
 		return_run_details?: boolean;
 	}
 ): Promise<CreateWorkflowDispatchResult | undefined> {
-	const { data } = await octokit.actions.createWorkflowDispatch(params);
+	const { data } = await octokit.rest.actions.createWorkflowDispatch(params);
 	if (!params?.return_run_details) {
 		return undefined;
 	}
@@ -73,7 +73,7 @@ export async function downloadArtifactFileJSON<ParseAs>(
 	const { owner, repo, workflowRunId, artifactName, filePath } = params;
 
 	// List artifacts for the workflow run and find the one with the specified name
-	const allArtifacts = await octokit.actions.listWorkflowRunArtifacts({
+	const allArtifacts = await octokit.rest.actions.listWorkflowRunArtifacts({
 		owner,
 		repo,
 		run_id: workflowRunId
@@ -84,7 +84,7 @@ export async function downloadArtifactFileJSON<ParseAs>(
 	}
 
 	// Download and extract the artifact to get the workflow inputs
-	const { data } = (await octokit.actions.downloadArtifact({
+	const { data } = (await octokit.rest.actions.downloadArtifact({
 		owner,
 		repo,
 		artifact_id: artifact.id,
