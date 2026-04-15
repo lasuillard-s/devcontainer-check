@@ -9,13 +9,13 @@ export interface CreateWorkflowDispatchResult {
 
 export async function createWorkflowDispatch(
 	octokit: ProbotOctokit,
-	params?: Parameters<ProbotOctokit['actions']['createWorkflowDispatch']>[0] & {
+	params: Parameters<ProbotOctokit['actions']['createWorkflowDispatch']>[0] & {
 		return_run_details: false;
 	}
 ): Promise<undefined>;
 export async function createWorkflowDispatch(
 	octokit: ProbotOctokit,
-	params?: Parameters<ProbotOctokit['actions']['createWorkflowDispatch']>[0] & {
+	params: Parameters<ProbotOctokit['actions']['createWorkflowDispatch']>[0] & {
 		return_run_details: true;
 	}
 ): Promise<CreateWorkflowDispatchResult>;
@@ -37,7 +37,7 @@ export async function createWorkflowDispatch(
  */
 export async function createWorkflowDispatch(
 	octokit: ProbotOctokit,
-	params?: Parameters<ProbotOctokit['actions']['createWorkflowDispatch']>[0] & {
+	params: Parameters<ProbotOctokit['actions']['createWorkflowDispatch']>[0] & {
 		return_run_details?: boolean;
 	}
 ): Promise<CreateWorkflowDispatchResult | undefined> {
