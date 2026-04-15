@@ -6,6 +6,7 @@ import { Probot, ProbotOctokit } from 'probot';
 import { fileURLToPath } from 'url';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import app from '../src/app.js';
+import { WorkflowInputs } from '../src/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const privateKey = fs.readFileSync(path.join(__dirname, 'fixtures/mock-cert.pem'), 'utf-8');
@@ -60,7 +61,7 @@ describe('on push', () => {
 						inputs: {
 							owner: 'devcontainer-check-org',
 							repo: 'devcontainer-check',
-							ref: 'refs/heads/setup-devenv'
+							sha: '197c4cb7a03609bffcce9962c8f36e67ed1a8419'
 						},
 						return_run_details: true
 					});
@@ -204,7 +205,7 @@ describe('on workflow_run.completed', () => {
 		test('updates commit status to success when workflow run completes successfully', async () => {
 			// Arrange
 			const zip = new AdmZip();
-			const inputs = { owner: 'target-org', repo: 'target-repo', ref: 'abc1234' };
+			const inputs: WorkflowInputs = { owner: 'target-org', repo: 'target-repo', sha: 'abc1234' };
 			zip.addFile('inputs.json', Buffer.from(JSON.stringify(inputs)));
 			const zipBuffer = zip.toBuffer();
 			const mock = nock('https://api.github.com')
@@ -238,7 +239,7 @@ describe('on workflow_run.completed', () => {
 			const failedPayload = structuredClone(payload);
 			failedPayload.workflow_run.conclusion = 'failure';
 			const zip = new AdmZip();
-			const inputs = { owner: 'target-org', repo: 'target-repo', ref: 'abc1234' };
+			const inputs: WorkflowInputs = { owner: 'target-org', repo: 'target-repo', sha: 'abc1234' };
 			zip.addFile('inputs.json', Buffer.from(JSON.stringify(inputs)));
 			const zipBuffer = zip.toBuffer();
 			const mock = nock('https://api.github.com')

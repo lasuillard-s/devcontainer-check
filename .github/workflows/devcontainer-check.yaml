@@ -1,5 +1,5 @@
 name: Dev Container Check
-run-name: Check ${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.ref || '~DEFAULT_BRANCH' }}
+run-name: Check ${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
 
 on:
   workflow_dispatch:
@@ -14,15 +14,14 @@ on:
         type: string
         required: true
 
-      ref:
-        description: Branch, tag or commit SHA to check (falls back to default branch if not specified)
+      sha:
+        description: Commit SHA to check
         type: string
-        required: false
-        default: ''
+        required: true
 
 concurrency:
   # Single workflow run per repository/branch
-  group: ${{ github.workflow }}/${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.ref || '~DEFAULT_BRANCH' }}
+  group: ${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -33,6 +32,7 @@ jobs:
     permissions:
       contents: read
     steps:
+      # Save the workflow inputs as an artifact to use when workflow completion event is received
       - name: Save workflow inputs
         run: echo '${{ toJSON(inputs) }}' > inputs.json
 
@@ -42,6 +42,7 @@ jobs:
           path: inputs.json
           retention-days: 1
 
+      # Main logic of the workflow to check for dev container configuration
       - name: Get application token
         id: get-token
         uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
@@ -56,7 +57,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: ${{ inputs.owner }}/${{ inputs.repo }}
-          ref: ${{ inputs.ref || '' }}
+          ref: ${{ inputs.sha }}
           token: ${{ steps.get-token.outputs.token }}
           fetch-depth: 1 # Only fetch the latest commit to speed up the workflow
 

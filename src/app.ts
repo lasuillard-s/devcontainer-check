@@ -3,19 +3,9 @@ import type { ApplicationFunction, Context, ProbotOctokit } from 'probot';
 import { type AppConfig, loadConfig } from './config.js';
 import { isDevContainerFileChanged } from './devcontainer.js';
 import { createWorkflowDispatch, downloadArtifactFileJSON } from './octokit.js';
+import { WorkflowInputs } from './types.js';
 
 const COMMIT_STATUS_CONTEXT = 'Dev Container Check';
-
-/**
- * Type definition for the expected structure of the workflow inputs artifact.
- *
- * These should match the inputs defined in `.github/workflows/devcontainer-check.yaml`
- */
-interface WorkflowInputs {
-	owner: string;
-	repo: string;
-	ref: string;
-}
 
 /** Helper type to extract the correct type for the files array in the response. */
 type DiffEntries = Awaited<
@@ -76,9 +66,9 @@ export default ((app) => {
 		// If devcontainer-related changes are detected, trigger the workflow dispatch event
 		const runnerRepo = getRunnerRepo(appConfig);
 		const ref = appConfig.CHECK_WORKFLOW_REF ?? payload.repository.default_branch;
-		const inputs = {
+		const inputs: WorkflowInputs = {
 			...repo,
-			ref: payload.ref
+			sha: payload.after
 		};
 		log.info(
 			'Devcontainer-related file change detected in this push.' +
@@ -89,7 +79,7 @@ export default ((app) => {
 			...runnerRepo,
 			workflow_id: appConfig.CHECK_WORKFLOW_NAME,
 			ref,
-			inputs,
+			inputs: inputs as unknown as Record<string, unknown>,
 			return_run_details: true
 		});
 		const workflowRunUrl = workflowDispatchResult?.html_url;
@@ -140,11 +130,10 @@ export default ((app) => {
 
 		// Update the commit status based on the workflow run conclusion
 		const targetRepo = { owner: inputs.owner, repo: inputs.repo };
-		const sha = inputs.ref;
 		const state = payload.workflow_run.conclusion === 'success' ? 'success' : 'failure';
 		await octokit.repos.createCommitStatus({
 			...targetRepo,
-			sha,
+			sha: inputs.sha,
 			state,
 			context: COMMIT_STATUS_CONTEXT,
 			description:
