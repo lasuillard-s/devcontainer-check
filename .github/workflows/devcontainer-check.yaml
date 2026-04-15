@@ -36,7 +36,7 @@ jobs:
       - name: Save workflow inputs
         run: echo '${{ toJSON(inputs) }}' > inputs.json
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: workflow-inputs
           path: inputs.json
@@ -45,10 +45,10 @@ jobs:
       # Main logic of the workflow to check for dev container configuration
       - name: Get application token
         id: get-token
-        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3
         with:
           private-key: ${{ secrets.PRIVATE_KEY }}
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_ID }}
           owner: ${{ inputs.owner }}
           repositories: ${{ inputs.repo }}
 
