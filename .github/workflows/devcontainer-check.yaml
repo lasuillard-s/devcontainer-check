@@ -17,7 +17,7 @@ on:
         description: Branch, tag or commit SHA to check (defaults to the default branch)
         type: string
         required: false
-        default: ""
+        default: ''
 
 concurrency:
   # Single workflow run per repository/branch
