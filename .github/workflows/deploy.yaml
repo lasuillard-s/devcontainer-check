@@ -1,0 +1,48 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    environment:
+      name: vercel
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel
+
+      - name: Login to Vercel
+        run: vercel login --token '${{ secrets.VERCEL_TOKEN }}'
+
+      - name: Pull Vercel environment information
+        run: vercel pull --yes --environment=production
+
+      - name: Build the project
+        run: vercel build --prod
+
+      - name: Deploy to Vercel
+        run: vercel deploy --prebuilt --prod
+
+      - name: Logout from Vercel
+        if: always()
+        run: vercel logout
