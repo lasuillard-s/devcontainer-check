@@ -1,6 +1,7 @@
 import type { Context } from 'probot';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, vi } from 'vitest';
 import { isDevContainerFileChanged } from '../src/devcontainer.js';
+import { test } from './helpers.js';
 
 describe('isDevContainerFileChanged', () => {
 	let context: Context<'push'>;

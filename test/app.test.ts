@@ -2,38 +2,24 @@ import AdmZip from 'adm-zip';
 import fs from 'fs';
 import nock from 'nock';
 import path from 'path';
-import { Probot, ProbotOctokit } from 'probot';
 import { fileURLToPath } from 'url';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
-import app from '../src/app.js';
+import { beforeEach, describe, expect, vi } from 'vitest';
 import { WorkflowInputs } from '../src/types.js';
+import { test } from './helpers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const privateKey = fs.readFileSync(path.join(__dirname, 'fixtures/mock-cert.pem'), 'utf-8');
 
 describe('on push', () => {
 	const payload = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/push.json'), 'utf-8'));
 	const installationId: number = payload.installation.id;
 
-	let probot: Probot;
-
 	beforeEach(() => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
 		vi.stubEnv('CHECK_WORKFLOW_NAME', 'devcontainer-check.yaml');
 		vi.stubEnv('CHECK_WORKFLOW_REF', undefined);
-		probot = new Probot({
-			appId: 123,
-			privateKey,
-			// Disable request throttling and retries for testing
-			Octokit: ProbotOctokit.defaults({
-				retry: { enabled: false },
-				throttle: { enabled: false }
-			})
-		});
-		probot.load(app);
 	});
 
-	test('dispatches a workflow when devcontainer files are changed', async () => {
+	test('dispatches a workflow when devcontainer files are changed', async ({ probot }) => {
 		// Arrange
 		const mock = nock('https://api.github.com')
 			.post(`/app/installations/${installationId}/access_tokens`)
@@ -92,7 +78,9 @@ describe('on push', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	test('does not dispatch a workflow when no devcontainer files are changed', async () => {
+	test('does not dispatch a workflow when no devcontainer files are changed', async ({
+		probot
+	}) => {
 		// Arrange
 		const payloadWithoutDevcontainerFiles = structuredClone(payload);
 		payloadWithoutDevcontainerFiles.commits = payloadWithoutDevcontainerFiles.commits.map(
@@ -132,7 +120,7 @@ describe('on push', () => {
 		]);
 	});
 
-	test('does not dispatch a workflow for tag pushes', async () => {
+	test('does not dispatch a workflow for tag pushes', async ({ probot }) => {
 		// Arrange
 		const tagPushPayload = {
 			...payload,
@@ -163,25 +151,13 @@ describe('on workflow_run.completed', () => {
 	const owner: string = payload.repository.owner.login;
 	const repo: string = payload.repository.name;
 
-	let probot: Probot;
-
 	beforeEach(() => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'example-org/runner-repo');
 		vi.stubEnv('CHECK_WORKFLOW_NAME', 'devcontainer-check.yaml');
 		vi.stubEnv('CHECK_WORKFLOW_REF', undefined);
-		probot = new Probot({
-			appId: 123,
-			privateKey,
-			// Disable request throttling and retries for testing
-			Octokit: ProbotOctokit.defaults({
-				retry: { enabled: false },
-				throttle: { enabled: false }
-			})
-		});
-		probot.load(app);
 	});
 
-	test('ignores workflow run from non-runner repository', async () => {
+	test('ignores workflow run from non-runner repository', async ({ probot }) => {
 		// Arrange
 		const payloadWithDifferentRepo = structuredClone(payload);
 		payloadWithDifferentRepo.repository.full_name = 'other-org/other-repo';
@@ -202,7 +178,9 @@ describe('on workflow_run.completed', () => {
 	});
 
 	describe('when runner repository matches', () => {
-		test('updates commit status to success when workflow run completes successfully', async () => {
+		test('updates commit status to success when workflow run completes successfully', async ({
+			probot
+		}) => {
 			// Arrange
 			const zip = new AdmZip();
 			const inputs: WorkflowInputs = { owner: 'target-org', repo: 'target-repo', sha: 'abc1234' };
@@ -234,7 +212,9 @@ describe('on workflow_run.completed', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		test('updates commit status to failure when workflow run does not succeed', async () => {
+		test('updates commit status to failure when workflow run does not succeed', async ({
+			probot
+		}) => {
 			// Arrange
 			const failedPayload = structuredClone(payload);
 			failedPayload.workflow_run.conclusion = 'failure';
@@ -268,7 +248,9 @@ describe('on workflow_run.completed', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		test('logs error and skips status update when workflow inputs artifact is not found', async () => {
+		test('logs error and skips status update when workflow inputs artifact is not found', async ({
+			probot
+		}) => {
 			// Arrange
 			const mock = nock('https://api.github.com')
 				.post(`/app/installations/${installationId}/access_tokens`)
