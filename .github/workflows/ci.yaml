@@ -20,7 +20,7 @@ jobs:
           cache: npm
 
       - name: Install deps
-        run: npm ci
+        run: npm clean-install
 
       - name: Check code formatting
         run: npm run fmt:check
@@ -45,7 +45,7 @@ jobs:
           cache: npm
 
       - name: Install deps
-        run: npm ci
+        run: npm clean-install
 
       - name: Run tests
         run: npm run test
