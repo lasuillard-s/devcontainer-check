@@ -29,7 +29,7 @@ sequenceDiagram
 
 - **Why use GitHub Actions?**
 
-  To validate, build and test containers. Most of validations would be quick, but building and running containers takes some time and resource-heavy work. We reuse GitHub Actions for it.
+  To validate, build and test containers. Most validations would be quick, but building and running containers takes some time and resource-heavy work. We reuse GitHub Actions for it.
 
 - **Why must I self-host this app?**
 
@@ -100,7 +100,7 @@ Here we describe deploying the webhook handler (app) to Vercel.
 
 Here, we will not describe how to create a Vercel project in detail.
 
-1. Log in to the Vercel
+1. Log in to Vercel
 1. Create project then go to **Settings** > **Environment Variables**
 1. Set following environment variables
 
