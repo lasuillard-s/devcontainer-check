@@ -9,7 +9,7 @@ A GitHub App to automate validating your repositories' dev container configurati
 
 ## ❔ How it works
 
-Below is sequence diagram describing how this app works:
+Below is a sequence diagram describing how this app works:
 
 ```mermaid
 sequenceDiagram
