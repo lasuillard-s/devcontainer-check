@@ -32,13 +32,16 @@
 		"test:watch": "vitest --silent --watch"
 	},
 	"dependencies": {
-		"probot": "^13.4.5"
+		"adm-zip": "^0.5.17",
+		"probot": "^13.4.5",
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "3.3.5",
 		"@eslint/js": "10.0.1",
+		"@types/adm-zip": "^0.5.8",
 		"@types/node": "^20.0.0",
-		"@vitest/coverage-v8": "^2.1.9",
+		"@vitest/coverage-v8": "^4.1.4",
 		"eslint-config-prettier": "10.1.8",
 		"eslint-plugin-jsdoc": "62.9.0",
 		"globals": "^17.5.0",
@@ -48,7 +51,7 @@
 		"smee-client": "^2.0.0",
 		"typescript": "^6.0.2",
 		"typescript-eslint": "^8.58.1",
-		"vitest": "^2.0.0"
+		"vitest": "^4.1.4"
 	},
 	"overrides": {
 		"@types/pg": "8.15.1"

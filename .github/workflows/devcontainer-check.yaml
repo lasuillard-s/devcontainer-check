@@ -1,4 +1,5 @@
-name: Check Dev Container
+name: Dev Container Check
+run-name: Check ${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
 
 on:
   workflow_dispatch:
@@ -13,24 +14,25 @@ on:
         type: string
         required: true
 
-      ref:
-        description: Branch, tag or commit SHA to check (defaults to the default branch)
+      sha:
+        description: Commit SHA to check
         type: string
-        required: false
-        default: ''
+        required: true
 
 concurrency:
   # Single workflow run per repository/branch
-  group: ${{ github.workflow }}/${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.ref || 'default-branch' }}
+  group: ${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
   cancel-in-progress: true
 
 jobs:
-  dev-container-check:
+  check:
+    name: check
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read
     steps:
+      # Save the workflow inputs as an artifact to use when workflow completion event is received
       - name: Save workflow inputs
         run: echo '${{ toJSON(inputs) }}' > inputs.json
 
@@ -40,38 +42,24 @@ jobs:
           path: inputs.json
           retention-days: 1
 
+      # Main logic of the workflow to check for dev container configuration
       - name: Get application token
         id: get-token
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3
         with:
           private-key: ${{ secrets.PRIVATE_KEY }}
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_ID }}
           owner: ${{ inputs.owner }}
           repositories: ${{ inputs.repo }}
 
-      - name: Checkout ${{ inputs.owner }}/${{ inputs.repo }} (${{ inputs.ref || 'default branch' }})
+      - name: Checkout
         id: checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: ${{ inputs.owner }}/${{ inputs.repo }}
-          ref: ${{ inputs.ref || '' }}
+          ref: ${{ inputs.sha }}
           token: ${{ steps.get-token.outputs.token }}
           fetch-depth: 1 # Only fetch the latest commit to speed up the workflow
-
-      - name: Define target repository context as environment variable
-        run: |
-          # Target repository owner
-          echo "TARGET_OWNER=${{ inputs.owner }}" >> $GITHUB_ENV
-
-          # Target repository name (without owner)
-          echo "TARGET_REPOSITORY=${{ inputs.repo }}" >> $GITHUB_ENV
-
-          # Latest commit SHA of the checked-out branch
-          echo "COMMIT_SHA=${{ steps.checkout.outputs.commit }}" >> $GITHUB_ENV
-
-          # URL of the current workflow run, used for commit status target_url
-          # * Runner repository may be private so the URL may not be accessible to everyone
-          echo "WORKFLOW_RUN_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_ENV
 
       - name: Check dev container configuration
         id: check-dev-container
@@ -90,23 +78,6 @@ jobs:
           echo 'No dev container configuration found in the repository.'
           echo 'using-dev-container=false' >> $GITHUB_OUTPUT
 
-      - name: Set commit status to pending
-        if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' }}
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        with:
-          github-token: ${{ steps.get-token.outputs.token }}
-          script: |
-            const { repo } = context;
-            await github.rest.repos.createCommitStatus({
-              owner: process.env.TARGET_OWNER,
-              repo: process.env.TARGET_REPOSITORY,
-              sha: process.env.COMMIT_SHA,
-              state: 'pending',
-              context: 'Dev Container Check',
-              description: 'Checking for dev container configuration...',
-              target_url: process.env.WORKFLOW_RUN_URL
-            });
-
       - name: Check for dev container configuration
         if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' }}
         uses: devcontainers/ci@8bf61b26e9c3a98f69cb6ce2f88d24ff59b785c6 # v0.3
@@ -114,37 +85,3 @@ jobs:
         with:
           runCmd: echo "Dev container is running successfully."
           push: never
-
-      - name: Set commit status to success
-        if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' && success() }}
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        with:
-          github-token: ${{ steps.get-token.outputs.token }}
-          script: |
-            const { repo } = context;
-            await github.rest.repos.createCommitStatus({
-              owner: process.env.TARGET_OWNER,
-              repo: process.env.TARGET_REPOSITORY,
-              sha: process.env.COMMIT_SHA,
-              state: 'success',
-              context: 'Dev Container Check',
-              description: 'Dev container configuration is valid.',
-              target_url: process.env.WORKFLOW_RUN_URL
-            });
-
-      - name: Set commit status to failure
-        if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' && failure() }}
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        with:
-          github-token: ${{ steps.get-token.outputs.token }}
-          script: |
-            const { repo } = context;
-            await github.rest.repos.createCommitStatus({
-              owner: process.env.TARGET_OWNER,
-              repo: process.env.TARGET_REPOSITORY,
-              sha: process.env.COMMIT_SHA,
-              state: 'failure',
-              context: 'Dev Container Check',
-              description: 'Dev container configuration is invalid.',
-              target_url: process.env.WORKFLOW_RUN_URL
-            });
