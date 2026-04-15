@@ -16,7 +16,11 @@ export const AppConfig = z.object({
 	/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
 	CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
 	/** Reference for the workflow dispatch event. If not specified, defaults to the default branch. */
-	CHECK_WORKFLOW_REF: z.string().nullable().default(null),
+	CHECK_WORKFLOW_REF: z
+		.string()
+		.nullable()
+		.default(null)
+		.transform((value) => (value === '' ? null : value)),
 	/** Name of the artifact containing the workflow inputs. */
 	CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: z.string().nonempty().default('workflow-inputs'),
 	/**
