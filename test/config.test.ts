@@ -1,9 +1,20 @@
-import { describe, expect, vi } from 'vitest';
+import { Probot } from 'probot';
+import { beforeEach, describe, expect, vi } from 'vitest';
 import { loadConfig } from '../src/config.js';
 import { test } from './helpers.js';
 
 describe('loadConfig', () => {
-	test('loads valid config and applies defaults', ({ probot }) => {
+	let probot: Probot;
+
+	beforeEach(() => {
+		probot = {
+			log: {
+				error: vi.fn()
+			}
+		} as unknown as Probot;
+	});
+
+	test('loads valid config and applies defaults', () => {
 		// Arrange
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
 
@@ -17,7 +28,7 @@ describe('loadConfig', () => {
 		});
 	});
 
-	test('loads valid config with explicit workflow values', ({ probot }) => {
+	test('loads valid config with explicit workflow values', () => {
 		// Arrange
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
 		vi.stubEnv('CHECK_WORKFLOW_NAME', 'custom-check.yaml');
@@ -33,7 +44,7 @@ describe('loadConfig', () => {
 		});
 	});
 
-	test('logs and exits when RUNNER_REPOSITORY is invalid', ({ probot }) => {
+	test('logs and exits when RUNNER_REPOSITORY is invalid', () => {
 		// Arrange
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check/extra');
 		const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
