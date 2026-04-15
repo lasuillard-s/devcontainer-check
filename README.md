@@ -56,7 +56,7 @@ git clone https://github.com/lasuillard-s/devcontainer-check.git
 # Move to the project directory
 cd devcontainer-check
 
-# Install the dependencies (`npm install`)
+# Install the dependencies
 npm install
 
 # Build the application
