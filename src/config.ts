@@ -2,7 +2,7 @@ import type { Probot } from 'probot';
 import * as z from 'zod';
 
 export const AppConfig = z.object({
-	/** Full name (owner/repo) of the repository where the runner workflow is defined */
+	/** Full name (owner/repo) of the repository where the runner workflow is defined. */
 	RUNNER_REPOSITORY: z.string().refine(
 		(value) => {
 			const [owner, repo, ...rest] = value.split('/');
@@ -12,11 +12,11 @@ export const AppConfig = z.object({
 			message: 'RUNNER_REPOSITORY must be in the format "owner/repo"'
 		}
 	),
-	/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml' */
+	/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
 	CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
-	/** Reference for the workflow dispatch event. If not specified, defaults to the default branch */
+	/** Reference for the workflow dispatch event. If not specified, defaults to the default branch. */
 	CHECK_WORKFLOW_REF: z.string().nullable().default(null),
-	/** Name of the artifact containing the workflow inputs */
+	/** Name of the artifact containing the workflow inputs. */
 	CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: z.string().nonempty().default('workflow-inputs'),
 	/**
 	 * Path to the inputs file within the artifact.
