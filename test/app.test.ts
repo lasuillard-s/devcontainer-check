@@ -4,7 +4,7 @@ import nock from 'nock';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { beforeEach, describe, expect, vi } from 'vitest';
-import { WorkflowInputs } from '../src/types.js';
+import type { WorkflowInputs } from '../src/types.js';
 import { test } from './helpers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

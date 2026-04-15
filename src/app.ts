@@ -3,7 +3,7 @@ import type { ApplicationFunction, Context, ProbotOctokit } from 'probot';
 import { type AppConfig, loadConfig } from './config.js';
 import { isDevContainerFileChanged } from './devcontainer.js';
 import { createWorkflowDispatch, downloadArtifactFileJSON } from './octokit.js';
-import { WorkflowInputs } from './types.js';
+import type { WorkflowInputs } from './types.js';
 
 const COMMIT_STATUS_CONTEXT = 'Dev Container Check';
 
