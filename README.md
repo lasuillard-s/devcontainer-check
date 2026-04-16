@@ -31,7 +31,7 @@ sequenceDiagram
 
   To validate, build and test containers. Most validations would be quick, but building and running containers takes some time and resource-heavy work. We reuse GitHub Actions for it.
 
-- **Why must I self-host this app?**
+- **Why should I self-host this app?**
 
   Because we have no infrastructure to run the tasks, we use the GitHub Actions infra. It will work on your GitHub Actions infra and consume the CI minutes of yours.
 
@@ -94,52 +94,29 @@ This is required for runner repository to checkout the repository in the check w
 
 ### 👂 Deploy Webhook Handler (app)
 
-Here we describe deploying the webhook handler (app) to Vercel.
+You can deploy the webhook handler (app) to Vercel with deploy button:
 
-### 🏗️ Create Vercel project
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flasuillard-s%2Fdevcontainer-check&env=NODEJS_HELPERS,APP_ID,PRIVATE_KEY,GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,WEBHOOK_SECRET,RUNNER_REPOSITORY&envDefaults=%7B%22NODEJS_HELPERS%22%3A%220%22%7D&project-name=devcontainer-check&repository-name=devcontainer-check)
 
-Here, we will not describe how to create a Vercel project in detail.
+Description of environment variables used:
 
-1. Log in to Vercel
-1. Create project then go to **Settings** > **Environment Variables**
-1. Set following environment variables
+| Name                                                               | Value                |
+| ------------------------------------------------------------------ | -------------------- |
+| [NODEJS_HELPERS](https://probot.github.io/docs/deployment/#vercel) | 0                    |
+| APP_ID                                                             | From your GitHub App |
+| PRIVATE_KEY                                                        | 〃                   |
+| GITHUB_CLIENT_ID                                                   | 〃                   |
+| GITHUB_CLIENT_SECRET                                               | 〃                   |
+| WEBHOOK_SECRET                                                     | 〃                   |
 
-   | Name                                                               | Value                |
-   | ------------------------------------------------------------------ | -------------------- |
-   | [NODEJS_HELPERS](https://probot.github.io/docs/deployment/#vercel) | 0                    |
-   | APP_ID                                                             | From your GitHub App |
-   | PRIVATE_KEY                                                        | 〃                   |
-   | GITHUB_CLIENT_ID                                                   | 〃                   |
-   | GITHUB_CLIENT_SECRET                                               | 〃                   |
-   | WEBHOOK_SECRET                                                     | 〃                   |
+And app configuration variables (check [src/config.ts](src/config.ts) file for full reference):
 
-   And app configuration variables (check [src/config.ts](src/config.ts) file for full reference):
+| Name                                | Description                                                                                                     |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| RUNNER_REPOSITORY                   | **Required**. Full name (e.g. `"lasuillard-s/devcontainer-check"`) of the repository the check jobs should run. |
+| CHECK_WORKFLOW_NAME                 | Name of the workflow to be triggered. Defaults to `"devcontainer-check.yaml"`.                                  |
+| CHECK_WORKFLOW_REF                  | Git reference (tag or branch) which the workflow run on. Defaults to default branch (`""`).                     |
+| CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME | Name of the workflow artifact contain workflow inputs. Defaults to `"workflow-inputs"`.                         |
+| CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH | Path to the inputs file within the artifact zip archive. Defaults to `"inputs.json"`.                           |
 
-   | Name                                | Description                                                                                                     |
-   | ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-   | RUNNER_REPOSITORY                   | **Required**. Full name (e.g. `"lasuillard-s/devcontainer-check"`) of the repository the check jobs should run. |
-   | CHECK_WORKFLOW_NAME                 | Name of the workflow to be triggered. Defaults to `"devcontainer-check.yaml"`.                                  |
-   | CHECK_WORKFLOW_REF                  | Git reference (tag or branch) which the workflow run on. Defaults to default branch (`""`).                     |
-   | CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME | Name of the workflow artifact contain workflow inputs. Defaults to `"workflow-inputs"`.                         |
-   | CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH | Path to the inputs file within the artifact zip archive. Defaults to `"inputs.json"`.                           |
-
-1. Go to GitHub App settings page then update the webhook URL; e.g. `https://<project-name>.vercel.app/api/github/webhooks`
-
-### 🚀 Set up automated deployment
-
-> [!NOTE]
-> You don't need this step unless you are making this repository private, because Vercel-managed deployment (via GitHub App) requires pro plan or above for private repositories in GitHub organization. If you are using managed deployment, just disable the deploy workflow in **Actions** tab.
-
-Here we are going to set up automated deployment that runs on every code push to the main branch.
-
-Go to **Settings** > **Environments**. then create new environment named **vercel**. This environment will be used by [deployment workflow](.github/workflows/deploy.yaml).
-
-![GitHub Vercel Environment Variables](docs/deploy-vars.png)
-
-Then add below as **Environment secrets**:
-
-- **VERCEL_ORG_ID**: Find in Vercel **Team Settings** > **General** > **Team ID** or from `$.orgId` of **.vercel/project.json** file if using CLI
-- **VERCEL_PROJECT_ID**: Find in Vercel **Project Settings** > **General** > **Project ID** or from `$.projectId` of **.vercel/project.json** file if using CLI
-- **VERCEL_TOKEN**: Go to Vercel **Account Settings** > **Tokens** page and generate new one
-
-Now the workflow should deploy app every time you push changes to the main branch.
+Once deployed, go to GitHub App settings page you created then update the webhook URL; e.g. `https://<project-name>.vercel.app/api/github/webhooks` to your Vercel app.
