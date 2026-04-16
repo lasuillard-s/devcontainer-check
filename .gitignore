@@ -9,6 +9,7 @@ lib
 .devcontainer
 .vscode
 junit.xml
+.vercel
 
 # Created by https://www.toptal.com/developers/gitignore/api/git,osx,node,linux,windows,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=git,osx,node,linux,windows,visualstudiocode

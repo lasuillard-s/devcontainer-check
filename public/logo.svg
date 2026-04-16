@@ -23,20 +23,20 @@
     </filter>
   </defs>
 
-  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#bgGrad)"/>
+  <g transform="translate(256 256) scale(1.45) translate(-256 -256)">
+    <g filter="url(#softShadow)">
+      <path d="M256 116 366 178V302L256 364 146 302V178L256 116Z" fill="url(#cubeGrad)"/>
+      <path d="M256 116V240L146 178 256 116Z" fill="#67e8f9" fill-opacity="0.35"/>
+      <path d="M256 240V364L146 302V178L256 240Z" fill="#0284c7" fill-opacity="0.35"/>
+      <path d="M256 240 366 178V302L256 364V240Z" fill="#0369a1" fill-opacity="0.28"/>
+    </g>
 
-  <g filter="url(#softShadow)">
-    <path d="M256 116 366 178V302L256 364 146 302V178L256 116Z" fill="url(#cubeGrad)"/>
-    <path d="M256 116V240L146 178 256 116Z" fill="#67e8f9" fill-opacity="0.35"/>
-    <path d="M256 240V364L146 302V178L256 240Z" fill="#0284c7" fill-opacity="0.35"/>
-    <path d="M256 240 366 178V302L256 364V240Z" fill="#0369a1" fill-opacity="0.28"/>
+    <g stroke="#e2e8f0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95">
+      <path d="M186 214 152 240 186 266"/>
+      <path d="M326 214 360 240 326 266"/>
+    </g>
+
+    <circle cx="338" cy="336" r="64" fill="#0b1220" stroke="#1f2937" stroke-width="10"/>
+    <path d="M308 336 331 359 370 318" fill="none" stroke="url(#checkGrad)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-
-  <g stroke="#e2e8f0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95">
-    <path d="M186 214 152 240 186 266"/>
-    <path d="M326 214 360 240 326 266"/>
-  </g>
-
-  <circle cx="338" cy="336" r="64" fill="#0b1220" stroke="#1f2937" stroke-width="10"/>
-  <path d="M308 336 331 359 370 318" fill="none" stroke="url(#checkGrad)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
