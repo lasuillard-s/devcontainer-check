@@ -29,26 +29,23 @@ export const AppConfig = z
 		 * Otherwise, if the file is located at the root of the artifact, this should be set to `inputs.json`.
 		 */
 		CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: z.string().nonempty().default('inputs.json'),
-		/** Comma-separated list of branches that check runs on. Supports glob patterns. Defaults to the repository default branch. */
+		/** Comma-separated list of branches that check runs on. Supports glob patterns and defaults to the repository default branch. */
 		PUSH_BRANCHES: z
 			.string()
 			.transform(parseCsv)
 			.default(() => [DEFAULT_BRANCH_ALIAS]),
 		/**
-		 * Comma-separated list of target branches that check runs on for pull requests.
-		 *
-		 * Supports glob patterns (features/*).
-		 * Defaults to the repository default branch.
+		 * Comma-separated list of target branches that check runs on for pull requests. Supports glob patterns and defaults to the repository default branch.
 		 */
 		PR_BRANCHES: z
 			.string()
-			.optional() // Default is handled in the second transform to allow it to default to PUSH_BRANCHES
-			.transform((value) => (value ? parseCsv(value) : undefined))
+			.transform(parseCsv)
+			.default(() => [DEFAULT_BRANCH_ALIAS])
 	})
 	.transform((config) => {
 		return {
-			...config,
-			PR_BRANCHES: config.PR_BRANCHES ?? config.PUSH_BRANCHES
+			...config
+			// ... any additional processing of the config values can be done here
 		};
 	});
 export type AppConfig = z.infer<typeof AppConfig>;

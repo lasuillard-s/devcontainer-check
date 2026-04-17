@@ -63,21 +63,4 @@ describe('loadConfig', () => {
 		expect(() => loadConfig(probot)).toThrow('process.exit called');
 		expect(exitSpy).toHaveBeenCalledWith(1);
 	});
-
-	test('PR_BRANCHES defaults to PUSH_BRANCHES when not explicitly set', () => {
-		// Arrange
-		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
-		vi.stubEnv('PUSH_BRANCHES', 'main,develop');
-
-		// Act & Assert
-		expect(loadConfig(probot)).toStrictEqual({
-			RUNNER_REPOSITORY: 'acme/devcontainer-check-runner',
-			CHECK_WORKFLOW_NAME: 'devcontainer-check.yaml',
-			CHECK_WORKFLOW_REF: DEFAULT_BRANCH_ALIAS,
-			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'workflow-inputs',
-			CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: 'inputs.json',
-			PUSH_BRANCHES: ['main', 'develop'],
-			PR_BRANCHES: ['main', 'develop']
-		});
-	});
 });
