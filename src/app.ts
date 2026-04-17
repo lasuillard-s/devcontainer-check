@@ -60,7 +60,7 @@ export default ((app) => {
 
 		// Check if any of the changed files are related to devcontainer configuration
 		log.debug(`Checking ${changedFiles.length} changed files for devcontainer-related changes...`);
-		if (!isDevContainerFileChanged(context, changedFiles)) {
+		if (!isDevContainerFileChanged(changedFiles)) {
 			log.debug('No devcontainer-related file changes detected. Skipping workflow dispatch.');
 			return;
 		}
