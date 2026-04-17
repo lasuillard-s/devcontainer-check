@@ -7,19 +7,13 @@ export const DEFAULT_BRANCH_ALIAS = '~DEFAULT_BRANCH';
 export const AppConfig = z
 	.object({
 		/** Full name (owner/repo) of the repository where the runner workflow is defined. */
-		RUNNER_REPOSITORY: z.string().refine(
-			(value) => {
-				const [owner, repo, ...rest] = value.split('/');
-				return owner && repo && rest.length === 0;
-			},
-			{
-				message: 'RUNNER_REPOSITORY must be in the format "owner/repo"'
-			}
-		),
+		RUNNER_REPOSITORY: z.string().refine(validateRepositoryFormat, {
+			message: 'RUNNER_REPOSITORY must be in the format "owner/repo"'
+		}),
 		/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
 		CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
 		/** Reference for the workflow dispatch event. If not specified, defaults to the default branch. */
-		CHECK_WORKFLOW_REF: z.string().optional().default(DEFAULT_BRANCH_ALIAS),
+		CHECK_WORKFLOW_REF: z.string().nonempty().default(DEFAULT_BRANCH_ALIAS),
 		/** Name of the artifact containing the workflow inputs. */
 		CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: z.string().nonempty().default('workflow-inputs'),
 		/**
@@ -65,10 +59,21 @@ export function loadConfig(app: Probot): AppConfig {
 }
 
 /**
+ * Validate that a string is in the format "owner/repo".
+ * @param value String to validate
+ * @returns True if the string is in the correct format, false otherwise
+ */
+function validateRepositoryFormat(value: string): boolean {
+	const [owner, repo, ...rest] = value.split('/');
+	return Boolean(owner && repo && rest.length === 0);
+}
+
+/**
  * Parse a comma-separated string into an array of trimmed strings.
  * @param value Comma-separated string
  * @returns Array of string
  */
 function parseCsv(value: string): string[] {
-	return value.split(',').map((item) => item.trim());
+	const normalizedValue = value.trim();
+	return normalizedValue ? normalizedValue.split(',').map((item) => item.trim()) : [];
 }

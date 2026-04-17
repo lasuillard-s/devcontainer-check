@@ -108,17 +108,14 @@ export default ((app) => {
 
 		// If devcontainer-related changes are detected, trigger the workflow dispatch event
 		const runnerRepo = getRunnerRepo(appConfig);
-		const { data: runnerRepoDetail } = await octokit.rest.repos.get({
-			...runnerRepo
-		});
-		const runnerRef =
-			appConfig.CHECK_WORKFLOW_REF === DEFAULT_BRANCH_ALIAS
-				? runnerRepoDetail.default_branch
-				: appConfig.CHECK_WORKFLOW_REF;
-		const inputs: WorkflowInputs = {
-			...repo,
-			sha
-		};
+		let runnerRef = appConfig.CHECK_WORKFLOW_REF;
+		if (runnerRef === DEFAULT_BRANCH_ALIAS) {
+			const { data: runnerRepoDetail } = await octokit.rest.repos.get({
+				...runnerRepo
+			});
+			runnerRef = runnerRepoDetail.default_branch;
+		}
+		const inputs: WorkflowInputs = { ...repo, sha };
 		log.info(
 			'Devcontainer-related file change detected in this push.' +
 				` Triggering workflow ${appConfig.CHECK_WORKFLOW_NAME} in ${runnerRepo.owner}/${runnerRepo.repo}@${ref}` +
@@ -136,7 +133,7 @@ export default ((app) => {
 		// Update commit status to pending with a link to the workflow run
 		await octokit.rest.repos.createCommitStatus({
 			...repo,
-			sha: payload.after,
+			sha,
 			state: 'pending',
 			context: COMMIT_STATUS_CONTEXT,
 			description: 'Checking for dev container configuration...',
