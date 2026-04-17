@@ -79,7 +79,10 @@ Probot will create **.env** file in the repository with variables such as `APP_I
 
 The **Runner Repository** is a repository where check jobs run. You can reuse this repository as a runner repository as well (but recommended to make it private).
 
-If you want to separate the runner repository, create a new repository and copy & paste [.github/workflows/devcontainer-check.yaml](.github/workflows/devcontainer-check.yaml) file in the created repository. Just don't forget to ensure the app is installed to the runner repository as well.
+If you want to separate the runner repository, create a new repository and copy & paste [.github/workflows/devcontainer-check.yaml](.github/workflows/devcontainer-check.yaml) file in the created repository. Just don't forget to **ensure the app is installed to the runner repository** as well.
+
+> [!NOTE]
+> You can use [vendir](https://github.com/carvel-dev/vendir) with [Renovate](https://github.com/renovatebot/renovate) to sync workflow files automatically.
 
 Once the runner repository is ready, go to **Settings** > **Security and Quality** > **Secrets and variables** > **Actions**
 
@@ -119,4 +122,4 @@ And app configuration variables (check [src/config.ts](src/config.ts) file for f
 | CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME | Name of the workflow artifact contain workflow inputs. Defaults to `"workflow-inputs"`.                         |
 | CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH | Path to the inputs file within the artifact zip archive. Defaults to `"inputs.json"`.                           |
 
-Once deployed, go to GitHub App settings page you created then update the webhook URL; e.g. `https://<project-name>.vercel.app/api/github/webhooks` to your Vercel app.
+Once deployed, go to GitHub App settings page you created then update the webhook URL to your Vercel app (e.g. `https://<project-name>.vercel.app/api/github/webhooks`).
