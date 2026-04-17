@@ -114,12 +114,14 @@ Description of environment variables used:
 
 And app configuration variables (check [src/config.ts](src/config.ts) file for full reference):
 
-| Name                                | Description                                                                                                     |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| RUNNER_REPOSITORY                   | **Required**. Full name (e.g. `"lasuillard-s/devcontainer-check"`) of the repository the check jobs should run. |
-| CHECK_WORKFLOW_NAME                 | Name of the workflow to be triggered. Defaults to `"devcontainer-check.yaml"`.                                  |
-| CHECK_WORKFLOW_REF                  | Git reference (tag or branch) which the workflow run on. Defaults to default branch (`""`).                     |
-| CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME | Name of the workflow artifact contain workflow inputs. Defaults to `"workflow-inputs"`.                         |
-| CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH | Path to the inputs file within the artifact zip archive. Defaults to `"inputs.json"`.                           |
+| Name                                | Description                                                                                                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RUNNER_REPOSITORY                   | **Required**. Full name (owner/repo) of the repository where the runner workflow is defined.                                                          |
+| CHECK_WORKFLOW_NAME                 | ID of the workflow to be triggered. Defaults to `'devcontainer-check.yaml'`.                                                                          |
+| CHECK_WORKFLOW_REF                  | Reference for the workflow dispatch event. Defaults to the default branch of the runner repository.                                                   |
+| CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME | Name of the artifact containing the workflow inputs. Defaults to `'workflow-inputs'`.                                                                 |
+| CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH | Path to the inputs file within the artifact. Defaults to `'inputs.json'`.                                                                             |
+| PUSH_BRANCHES                       | Comma-separated list of branch names (supports glob patterns) that check runs on. Defaults to the repository default branch.                          |
+| PR_BRANCHES                         | Comma-separated list of target branch names (supports glob patterns) that check runs on for pull requests. Defaults to the repository default branch. |
 
 Once deployed, go to GitHub App settings page you created then update the webhook URL to your Vercel app (e.g. `https://<project-name>.vercel.app/api/github/webhooks`).

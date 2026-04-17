@@ -17,23 +17,16 @@ export const AppConfig = z
 		CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
 		/** Reference for the workflow dispatch event. Defaults to the default branch of the runner repository. */
 		CHECK_WORKFLOW_REF: z.string().nonempty().default(DEFAULT_BRANCH_ALIAS),
-		/** Name of the artifact containing the workflow inputs. */
+		/** Name of the artifact containing the workflow inputs. Defaults to 'workflow-inputs'. */
 		CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: z.string().nonempty().default('workflow-inputs'),
-		/**
-		 * Path to the inputs file within the artifact.
-		 *
-		 * If the file is located at the subdirectory `path/inputs.json` in the artifact, this should be set to `path/inputs.json`.
-		 * Otherwise, if the file is located at the root of the artifact, this should be set to `inputs.json`.
-		 */
+		/** Path to the inputs file within the artifact. Defaults to 'inputs.json'. */
 		CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: z.string().nonempty().default('inputs.json'),
-		/** Comma-separated list of branches that check runs on. Supports glob patterns and defaults to the repository default branch. */
+		/** Comma-separated list of branch names (supports glob patterns) that check runs on. Defaults to the repository default branch. */
 		PUSH_BRANCHES: z
 			.string()
 			.transform(parseCsv)
 			.default(() => [DEFAULT_BRANCH_ALIAS]),
-		/**
-		 * Comma-separated list of target branches that check runs on for pull requests. Supports glob patterns and defaults to the repository default branch.
-		 */
+		/** Comma-separated list of target branch names (supports glob patterns) that check runs on for pull requests. Defaults to the repository default branch. */
 		PR_BRANCHES: z
 			.string()
 			.transform(parseCsv)
