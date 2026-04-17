@@ -7,9 +7,12 @@ export const DEFAULT_BRANCH_ALIAS = '~DEFAULT_BRANCH';
 export const AppConfig = z
 	.object({
 		/** Full name (owner/repo) of the repository where the runner workflow is defined. */
-		RUNNER_REPOSITORY: z.string().refine(validateRepositoryFormat, {
-			message: 'RUNNER_REPOSITORY must be in the format "owner/repo"'
-		}),
+		RUNNER_REPOSITORY: z
+			.string()
+			.refine(validateRepositoryFormat, {
+				message: 'RUNNER_REPOSITORY must be in the format "owner/repo"'
+			})
+			.transform(toRepoObject),
 		/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
 		CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
 		/** Reference for the workflow dispatch event. If not specified, defaults to the default branch. */
@@ -66,6 +69,16 @@ export function loadConfig(app: Probot): AppConfig {
 function validateRepositoryFormat(value: string): boolean {
 	const [owner, repo, ...rest] = value.split('/');
 	return Boolean(owner && repo && rest.length === 0);
+}
+
+/**
+ * Convert a repository string in the format "owner/repo" to an object with owner and repo properties.
+ * @param repoString Repository string to convert
+ * @returns An object containing the owner and repo
+ */
+function toRepoObject(repoString: string): { owner: string; repo: string } {
+	const [owner, repo] = repoString.split('/');
+	return { owner, repo };
 }
 
 /**

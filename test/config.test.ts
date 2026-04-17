@@ -20,7 +20,7 @@ describe('loadConfig', () => {
 
 		// Act & Assert
 		expect(loadConfig(probot)).toStrictEqual({
-			RUNNER_REPOSITORY: 'acme/devcontainer-check-runner',
+			RUNNER_REPOSITORY: { owner: 'acme', repo: 'devcontainer-check-runner' },
 			CHECK_WORKFLOW_NAME: 'devcontainer-check.yaml',
 			CHECK_WORKFLOW_REF: DEFAULT_BRANCH_ALIAS,
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'workflow-inputs',
@@ -42,7 +42,7 @@ describe('loadConfig', () => {
 
 		// Act & Assert
 		expect(loadConfig(probot)).toStrictEqual({
-			RUNNER_REPOSITORY: 'acme/devcontainer-check-runner',
+			RUNNER_REPOSITORY: { owner: 'acme', repo: 'devcontainer-check-runner' },
 			CHECK_WORKFLOW_NAME: 'custom-check.yaml',
 			CHECK_WORKFLOW_REF: 'release-1',
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'my-workflow-inputs',
