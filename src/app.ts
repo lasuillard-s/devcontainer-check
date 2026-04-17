@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { ApplicationFunction, Context, ProbotOctokit } from 'probot';
-import { type AppConfig, loadConfig } from './config.js';
+import { type AppConfig, DEFAULT_BRANCH_ALIAS, loadConfig } from './config.js';
 import { isDevContainerFileChanged } from './devcontainer.js';
 import { createWorkflowDispatch, downloadArtifactFileJSON } from './octokit.js';
 import type { WorkflowInputs } from './types.js';
@@ -29,6 +29,7 @@ export default ((app) => {
 	app.on('push', async (context: Context<'push'>) => {
 		const { payload, octokit, log } = context;
 		const repo = context.repo();
+		const defaultBranchName = payload.repository.default_branch;
 		log.debug(`Push handler triggered on: ${payload.repository.full_name}@${payload.ref}`);
 
 		// Ignore tag pushes
@@ -65,7 +66,10 @@ export default ((app) => {
 
 		// If devcontainer-related changes are detected, trigger the workflow dispatch event
 		const runnerRepo = getRunnerRepo(appConfig);
-		const ref = appConfig.CHECK_WORKFLOW_REF ?? payload.repository.default_branch;
+		const ref =
+			appConfig.CHECK_WORKFLOW_REF === DEFAULT_BRANCH_ALIAS
+				? defaultBranchName
+				: appConfig.CHECK_WORKFLOW_REF;
 		const inputs: WorkflowInputs = {
 			...repo,
 			sha: payload.after
