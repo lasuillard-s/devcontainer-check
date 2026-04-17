@@ -107,19 +107,25 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 			files: [{ filename: 'package.json', status: 'modified' }]
 		})
 		.post(
-			'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
+			`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
+			(body: unknown) => {
+				expect(body).toStrictEqual({
+					state: 'success',
+					context: 'Dev Container Check',
+					description: 'Dev container configuration did not change.'
+				});
+				return true;
+			}
 		)
-		.reply(204);
+		.reply(201);
 
 	// Act
 	// @ts-expect-error Ignore fixture modification
 	await probot.receive({ id: '', name: 'push', payload: payloadWithoutDevcontainerFiles });
 
 	// Assert
-	expect(mock.isDone()).toBe(false);
-	expect(mock.pendingMocks()).toStrictEqual([
-		'POST https://api.github.com:443/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
-	]);
+	expect(mock.isDone()).toBe(true);
+	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
 test('does not dispatch a workflow for tag pushes', async ({ probot }) => {
