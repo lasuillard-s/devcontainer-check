@@ -2,9 +2,10 @@ import path from 'node:path';
 import type { ApplicationFunction, Context, ProbotOctokit } from 'probot';
 import { type AppConfig, DEFAULT_BRANCH_ALIAS, loadConfig } from './config.js';
 import { isDevContainerFileChanged } from './devcontainer.js';
-import { isRefTag } from './git.js';
+import { branchNameFromRef, isRefTag } from './git.js';
 import { createWorkflowDispatch, downloadArtifactFileJSON } from './octokit.js';
 import type { WorkflowInputs } from './types.js';
+import { matchPatterns } from './utils.js';
 
 const COMMIT_STATUS_CONTEXT = 'Dev Container Check';
 
@@ -12,16 +13,6 @@ const COMMIT_STATUS_CONTEXT = 'Dev Container Check';
 type DiffEntries = Awaited<
 	ReturnType<ProbotOctokit['rest']['repos']['compareCommitsWithBasehead']>
 >['data']['files'];
-
-/**
- * Parses the runner repository information from the application configuration.
- * @param config Application configuration
- * @returns An object containing the repository info
- */
-function getRunnerRepo(config: AppConfig): { owner: string; repo: string } {
-	const [owner, repo] = config.RUNNER_REPOSITORY.split('/');
-	return { owner, repo };
-}
 
 export default ((app) => {
 	const appConfig: AppConfig = loadConfig(app);
@@ -31,12 +22,63 @@ export default ((app) => {
 		const { payload, octokit, log } = context;
 		const repo = context.repo();
 		const defaultBranchName = payload.repository.default_branch;
-		log.debug(`Push handler triggered on: ${payload.repository.full_name}@${payload.ref}`);
+		const ref = payload.ref;
+		const sha = payload.after;
+		log.debug(`Push handler triggered on: ${payload.repository.full_name}@${ref}`);
 
 		// Ignore tag pushes
-		if (isRefTag(payload.ref)) {
-			log.debug(`Tag push detected (${payload.ref}). Ignoring event.`);
+		if (isRefTag(ref)) {
+			log.debug(`Ignoring tag push event (${ref}).`);
 			return;
+		}
+
+		// Fail-fast
+		const { data: pullRequests } = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
+			...repo,
+			commit_sha: sha
+		});
+		const hasAssociatedPR = pullRequests.length > 0;
+		if (hasAssociatedPR) {
+			// If the push event is associated with a pull request, only trigger the workflow
+			// when the base branch of the pull request matches the configured PR_BRANCHES.
+			log.debug(
+				`Push event is associated with ${pullRequests.length} pull request(s): ${pullRequests
+					.map((pr) => `#${pr.number} (${pr.base.ref})`)
+					.join(', ')}. Checking if any of the base branches match configured PR_BRANCHES...`
+			);
+			if (
+				!pullRequests.some((pr) => {
+					const baseBranchName = pr.base.ref; // * Not refs/heads/ format, just the branch name
+					return matchPatterns(baseBranchName, appConfig.PR_BRANCHES, {
+						[DEFAULT_BRANCH_ALIAS]: defaultBranchName
+					});
+				})
+			) {
+				log.debug(
+					`No associated pull request found with base branch matching configured PR_BRANCHES: ${appConfig.PR_BRANCHES}. Ignoring event.`
+				);
+				return;
+			}
+		} else {
+			// Only trigger the workflow if the push event is on a branch that matches the configured PUSH_BRANCHES.
+			log.debug(
+				`Push event is not associated with any pull request. Checking if branch matches configured PUSH_BRANCHES...`
+			);
+			const branchName = branchNameFromRef(ref);
+			if (!branchName) {
+				log.warn(`Unable to extract branch name from ref: ${ref}. Ignoring event.`);
+				return;
+			}
+			if (
+				!matchPatterns(branchName, appConfig.PUSH_BRANCHES, {
+					[DEFAULT_BRANCH_ALIAS]: defaultBranchName
+				})
+			) {
+				log.debug(
+					`Branch ${branchName} does not match configured PUSH_BRANCHES: ${appConfig.PUSH_BRANCHES}. Ignoring event.`
+				);
+				return;
+			}
 		}
 
 		// Collect all changed files from the push event
@@ -49,7 +91,6 @@ export default ((app) => {
 			}
 		)) {
 			const { data: comparison } = response;
-
 			changedFiles = changedFiles.concat(
 				// @ts-expect-error The types for the response are not correctly inferred
 				(comparison.files as DiffEntries)
@@ -67,13 +108,16 @@ export default ((app) => {
 
 		// If devcontainer-related changes are detected, trigger the workflow dispatch event
 		const runnerRepo = getRunnerRepo(appConfig);
-		const ref =
+		const { data: runnerRepoDetail } = await octokit.rest.repos.get({
+			...runnerRepo
+		});
+		const runnerRef =
 			appConfig.CHECK_WORKFLOW_REF === DEFAULT_BRANCH_ALIAS
-				? defaultBranchName
+				? runnerRepoDetail.default_branch
 				: appConfig.CHECK_WORKFLOW_REF;
 		const inputs: WorkflowInputs = {
 			...repo,
-			sha: payload.after
+			sha
 		};
 		log.info(
 			'Devcontainer-related file change detected in this push.' +
@@ -83,7 +127,7 @@ export default ((app) => {
 		const workflowDispatchResult = await createWorkflowDispatch(octokit, {
 			...runnerRepo,
 			workflow_id: appConfig.CHECK_WORKFLOW_NAME,
-			ref,
+			ref: runnerRef,
 			inputs: inputs as unknown as Record<string, unknown>,
 			return_run_details: true
 		});
@@ -156,3 +200,13 @@ export default ((app) => {
 		);
 	});
 }) satisfies ApplicationFunction;
+
+/**
+ * Parses the runner repository information from the application configuration.
+ * @param config Application configuration
+ * @returns An object containing the repository info
+ */
+function getRunnerRepo(config: AppConfig): { owner: string; repo: string } {
+	const [owner, repo] = config.RUNNER_REPOSITORY.split('/');
+	return { owner, repo };
+}
