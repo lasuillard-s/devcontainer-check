@@ -1,7 +1,8 @@
 import AdmZip from 'adm-zip';
 import type { ProbotOctokit } from 'probot';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import { createWorkflowDispatch, downloadArtifactFileJSON } from '../src/octokit.js';
+import { test } from './helpers.js';
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 function createMockOctokit() {
