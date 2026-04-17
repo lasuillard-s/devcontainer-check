@@ -13,6 +13,9 @@ type DiffEntries = Awaited<
 	ReturnType<ProbotOctokit['rest']['repos']['compareCommitsWithBasehead']>
 >['data']['files'];
 
+/** Special GitHub ref value indicating a non-existent commit (e.g., for new branch creations or deletions) */
+const GITHUB_NONEXISTENT_REF = '0000000000000000000000000000000000000000';
+
 /**
  * Handler for push events on the target repository.
  * @param context Event context
@@ -24,7 +27,20 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	const defaultBranchName = payload.repository.default_branch;
 	const ref = payload.ref;
 	const sha = payload.after;
+
 	log.debug(`Push handler triggered on: ${payload.repository.full_name}@${ref}`);
+
+	// Ignore new branch creations
+	if (payload.created || payload.before === GITHUB_NONEXISTENT_REF) {
+		log.debug(`Ignoring new branch creation event (${ref}).`);
+		return;
+	}
+
+	// Ignore deletions
+	if (payload.deleted || payload.after === GITHUB_NONEXISTENT_REF) {
+		log.debug(`Ignoring branch deletion event (${ref}).`);
+		return;
+	}
 
 	// Ignore tag pushes
 	if (isRefTag(ref)) {
@@ -82,6 +98,7 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	}
 
 	// Collect all changed files from the push event
+	log.debug('Collecting changed files from the push event...');
 	let changedFiles: string[] = [];
 	for await (const response of octokit.paginate.iterator(
 		octokit.rest.repos.compareCommitsWithBasehead,

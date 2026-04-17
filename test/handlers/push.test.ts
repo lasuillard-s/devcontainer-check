@@ -122,7 +122,57 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 	]);
 });
 
-test('does not dispatch a workflow for tag pushes', async ({ probot }) => {
+test('ignore new branch creations', async ({ probot }) => {
+	// Arrange
+	const newBranchPayload = {
+		...payload,
+		created: true,
+		before: '0000000000000000000000000000000000000000',
+		ref: 'refs/heads/new-branch'
+	};
+	const mock = nock('https://api.github.com')
+		.post(
+			'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
+		)
+		.reply(204);
+
+	// Act
+	// @ts-expect-error Ignore fixture modification
+	await probot.receive({ id: '', name: 'push', payload: newBranchPayload });
+
+	// Assert
+	expect(mock.isDone()).toBe(false);
+	expect(mock.pendingMocks()).toStrictEqual([
+		'POST https://api.github.com:443/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
+	]);
+});
+
+test('ignore branch deletions', async ({ probot }) => {
+	// Arrange
+	const deletedBranchPayload = {
+		...payload,
+		deleted: true,
+		after: '0000000000000000000000000000000000000000',
+		ref: 'refs/heads/old-branch'
+	};
+	const mock = nock('https://api.github.com')
+		.post(
+			'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
+		)
+		.reply(204);
+
+	// Act
+	// @ts-expect-error Ignore fixture modification
+	await probot.receive({ id: '', name: 'push', payload: deletedBranchPayload });
+
+	// Assert
+	expect(mock.isDone()).toBe(false);
+	expect(mock.pendingMocks()).toStrictEqual([
+		'POST https://api.github.com:443/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
+	]);
+});
+
+test('ignore tag pushes', async ({ probot }) => {
 	// Arrange
 	const tagPushPayload = {
 		...payload,
