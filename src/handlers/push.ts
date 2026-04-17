@@ -117,7 +117,7 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	const inputs: WorkflowInputs = { ...repo, sha };
 	log.info(
 		'Devcontainer-related file change detected in this push.' +
-			` Triggering workflow ${appConfig.CHECK_WORKFLOW_NAME} in ${appConfig.RUNNER_REPOSITORY.owner}/${appConfig.RUNNER_REPOSITORY.repo}@${ref}` +
+			` Triggering workflow ${appConfig.CHECK_WORKFLOW_NAME} in ${appConfig.RUNNER_REPOSITORY.owner}/${appConfig.RUNNER_REPOSITORY.repo}@${runnerRef}` +
 			` with inputs: ${JSON.stringify(inputs)}`
 	);
 	const workflowDispatchResult = await createWorkflowDispatch(octokit, {

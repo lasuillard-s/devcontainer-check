@@ -15,7 +15,7 @@ export const AppConfig = z
 			.transform(toRepoObject),
 		/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
 		CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
-		/** Reference for the workflow dispatch event. If not specified, defaults to the default branch. */
+		/** Reference for the workflow dispatch event. Defaults to the default branch of the runner repository. */
 		CHECK_WORKFLOW_REF: z.string().nonempty().default(DEFAULT_BRANCH_ALIAS),
 		/** Name of the artifact containing the workflow inputs. */
 		CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: z.string().nonempty().default('workflow-inputs'),
@@ -88,5 +88,10 @@ function toRepoObject(repoString: string): { owner: string; repo: string } {
  */
 function parseCsv(value: string): string[] {
 	const normalizedValue = value.trim();
-	return normalizedValue ? normalizedValue.split(',').map((item) => item.trim()) : [];
+	return normalizedValue
+		? normalizedValue
+				.split(',')
+				.map((item) => item.trim())
+				.filter(Boolean)
+		: [];
 }
