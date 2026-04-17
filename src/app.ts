@@ -2,6 +2,7 @@ import path from 'node:path';
 import type { ApplicationFunction, Context, ProbotOctokit } from 'probot';
 import { type AppConfig, DEFAULT_BRANCH_ALIAS, loadConfig } from './config.js';
 import { isDevContainerFileChanged } from './devcontainer.js';
+import { isRefTag } from './git.js';
 import { createWorkflowDispatch, downloadArtifactFileJSON } from './octokit.js';
 import type { WorkflowInputs } from './types.js';
 
@@ -33,7 +34,7 @@ export default ((app) => {
 		log.debug(`Push handler triggered on: ${payload.repository.full_name}@${payload.ref}`);
 
 		// Ignore tag pushes
-		if (payload.ref.startsWith('refs/tags/')) {
+		if (isRefTag(payload.ref)) {
 			log.debug(`Tag push detected (${payload.ref}). Ignoring event.`);
 			return;
 		}
