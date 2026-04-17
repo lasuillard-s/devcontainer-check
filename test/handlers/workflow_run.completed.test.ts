@@ -21,19 +21,15 @@ test('ignores workflow run from non-runner repository', async ({ probot }) => {
 	payloadWithDifferentRepo.repository.full_name = 'other-org/other-repo';
 	payloadWithDifferentRepo.repository.owner.login = 'other-org';
 	payloadWithDifferentRepo.repository.name = 'other-repo';
-	const mock = nock('https://api.github.com')
-		.get(`/repos/${owner}/${repo}/actions/runs/${payload.workflow_run.id}/artifacts`)
-		.reply(200, { total_count: 0, artifacts: [] });
+	const mock = nock('https://api.github.com');
 
 	// Act
 	// @ts-expect-error Ignore fixture modification
 	await probot.receive({ id: '', name: 'workflow_run', payload: payloadWithDifferentRepo });
 
 	// Assert
-	expect(mock.isDone()).toBe(false);
-	expect(mock.pendingMocks()).toStrictEqual([
-		`GET https://api.github.com:443/repos/${owner}/${repo}/actions/runs/${payload.workflow_run.id}/artifacts`
-	]);
+	expect(mock.isDone()).toBe(true);
+	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
 describe('when runner repository matches', () => {
@@ -117,18 +113,14 @@ describe('when runner repository matches', () => {
 			.post(`/app/installations/${installationId}/access_tokens`)
 			.reply(200, { token: 'test', permissions: { actions: 'write' } })
 			.get(`/repos/${owner}/${repo}/actions/runs/${payload.workflow_run.id}/artifacts`)
-			.reply(200, { total_count: 0, artifacts: [] })
-			.post('/repos/target-org/target-repo/statuses/abc1234')
-			.reply(201);
+			.reply(200, { total_count: 0, artifacts: [] });
 
 		// Act
 		// @ts-expect-error Ignore fixture modification
 		await probot.receive({ id: '', name: 'workflow_run', payload });
 
 		// Assert
-		expect(mock.isDone()).toBe(false);
-		expect(mock.pendingMocks()).toStrictEqual([
-			'POST https://api.github.com:443/repos/target-org/target-repo/statuses/abc1234'
-		]);
+		expect(mock.isDone()).toBe(true);
+		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 });
