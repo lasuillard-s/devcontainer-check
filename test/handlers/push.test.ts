@@ -52,9 +52,7 @@ test('dispatches a workflow when devcontainer files are changed', async ({ probo
 				return true;
 			}
 		)
-		.reply(201, {
-			html_url: workflowRunUrl
-		})
+		.reply(201, { html_url: workflowRunUrl })
 		.post(
 			`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
 			(body: unknown) => {
@@ -129,8 +127,8 @@ test('on new branch creations, use commits in payload to determine changed files
 	const newBranchPayload = structuredClone(payload);
 	newBranchPayload.created = true;
 	newBranchPayload.before = '0000000000000000000000000000000000000000';
-	newBranchPayload.ref = 'refs/heads/new-branch';
 
+	const workflowRunUrl = 'https://github.com/acme/devcontainer-check-runner/actions/runs/456';
 	const mock = nock('https://api.github.com')
 		.post(`/app/installations/${installationId}/access_tokens`)
 		.reply(200, {
@@ -141,20 +139,33 @@ test('on new branch creations, use commits in payload to determine changed files
 		})
 		.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
 		.reply(200, [])
+		.get('/repos/acme/devcontainer-check-runner')
+		.reply(200, { default_branch: 'main' })
 		.post(
 			'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
 		)
-		.reply(204);
+		.reply(201, { html_url: workflowRunUrl })
+		.post(
+			`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
+			(body: unknown) => {
+				expect(body).toStrictEqual({
+					state: 'pending',
+					context: 'Dev Container Check',
+					description: 'Checking for dev container configuration...',
+					target_url: workflowRunUrl
+				});
+				return true;
+			}
+		)
+		.reply(201);
 
 	// Act
 	// @ts-expect-error Ignore fixture modification
 	await probot.receive({ id: '', name: 'push', payload: newBranchPayload });
 
 	// Assert
-	expect(mock.isDone()).toBe(false);
-	expect(mock.pendingMocks()).toStrictEqual([
-		'POST https://api.github.com:443/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
-	]);
+	expect(mock.isDone()).toBe(true);
+	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
 test('ignore branch deletions', async ({ probot }) => {
