@@ -20,7 +20,7 @@ on:
         required: true
 
 concurrency:
-  # Single workflow run per repository/branch
+  # Single workflow run per repository/SHA
   group: |-
     ${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
   cancel-in-progress: true
