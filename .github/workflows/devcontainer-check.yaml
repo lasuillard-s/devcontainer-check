@@ -44,7 +44,7 @@ jobs:
 
       # Main logic of the workflow to check for dev container configuration
       - name: Install devcontainer and ajv CLI
-        run: npm install --global @devcontainers/cli ajv-cli
+        run: npm install --global @devcontainers/cli@0.86.0 ajv-cli@5.0.0
 
       - name: Get application token
         id: get-token
