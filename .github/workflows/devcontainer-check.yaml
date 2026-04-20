@@ -116,7 +116,11 @@ jobs:
             | sha256sum \
             | awk '{print $1}' \
           )"
-          echo "config-hash=${config_hash}" >> "$GITHUB_OUTPUT"
+          echo "config-hash=${config_hash}" | tee --append "$GITHUB_OUTPUT"
+          if [ -z "$config_hash" ]; then
+            echo "Failed to calculate configuration hash. The dev container configuration might be invalid."
+            exit 1
+          fi
         # outputs: config-hash
 
         # Restore previous check result from cache and re-use it
