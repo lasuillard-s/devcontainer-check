@@ -93,6 +93,7 @@ jobs:
         id: hash-config
         if: steps.resolve-config.outputs.using-devcontainer == 'true'
         timeout-minutes: 5
+        shell: bash
         run: |
           config_hash="$( \
             devcontainer read-configuration \
