@@ -21,7 +21,8 @@ on:
 
 concurrency:
   # Single workflow run per repository/branch
-  group: ${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
+  group: |-
+    ${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -31,8 +32,12 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+    env:
+      CHECK_RESULT: .devcontainer-check/result.json
+      CHECK_RESULT_DIR: .devcontainer-check
     steps:
-      # Save the workflow inputs as an artifact to use when workflow completion event is received
+      # Save the workflow inputs as an artifact for use on workflow completion event
+      # (see src/handlers/workflow_run.completed.ts)
       - name: Save workflow inputs
         run: echo '${{ toJSON(inputs) }}' > inputs.json
 
@@ -42,7 +47,11 @@ jobs:
           path: inputs.json
           retention-days: 1
 
-      # Main logic of the workflow to check for dev container configuration
+      # Workflow set-up
+      - name: Install dev container CLI
+        run: |
+          npm install --global @devcontainers/cli
+
       - name: Get application token
         id: get-token
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3
@@ -61,27 +70,167 @@ jobs:
           token: ${{ steps.get-token.outputs.token }}
           fetch-depth: 1 # Only fetch the latest commit to speed up the workflow
 
+      # Calculate hash of devcontainer configuration
       - name: Check dev container configuration
-        id: check-dev-container
+        id: resolve-config
         run: |
           if [ -d '.devcontainer' ]; then
             echo 'Found .devcontainer directory, using it as the dev container configuration.'
-            echo 'using-dev-container=true' >> $GITHUB_OUTPUT
+            echo 'using-devcontainer=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if [ -d '.devcontainer.example' ]; then
             echo 'Found .devcontainer.example directory, using it as the dev container configuration.'
             cp --recursive .devcontainer.example .devcontainer
-            echo 'using-dev-container=true' >> $GITHUB_OUTPUT
+            echo 'using-devcontainer=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo 'No dev container configuration found in the repository.'
-          echo 'using-dev-container=false' >> $GITHUB_OUTPUT
+          echo 'using-devcontainer=false' >> "$GITHUB_OUTPUT"
+        # outputs: using-devcontainer
 
-      - name: Check for dev container configuration
-        if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' }}
-        uses: devcontainers/ci@8bf61b26e9c3a98f69cb6ce2f88d24ff59b785c6 # v0.3
-        timeout-minutes: 15
+      - name: Calculate hash of dev container configuration
+        id: hash-config
+        if: steps.resolve-config.outputs.using-devcontainer == 'true'
+        timeout-minutes: 5
+        run: |
+          config_hash="$( \
+            devcontainer read-configuration \
+              --workspace-folder . \
+              --include-features-configuration \
+              --include-merged-configuration \
+              2>/dev/null \
+            | jq -cS '
+              del(
+                .workspace.workspaceFolder,
+                .workspace.workspaceMount,
+                .configuration.configFilePath,
+                .featuresConfiguration.dstFolder,
+                .featuresConfiguration.featureSets[].features[].cachePath,
+                .mergedConfiguration.configFilePath
+              )
+              ' \
+            | sha256sum \
+            | awk '{print $1}' \
+          )"
+          echo "config-hash=${config_hash}" >> "$GITHUB_OUTPUT"
+        # outputs: config-hash
+
+        # Restore previous check result from cache and re-use it
+      - name: Restore previous check result from cache
+        id: cache
+        if: steps.resolve-config.outputs.using-devcontainer == 'true'
+        uses: actions/cache/restore@v5
         with:
-          runCmd: echo "Dev container is running successfully."
-          push: never
+          key: check-result-${{ inputs.owner }}-${{ inputs.repo }}-${{
+            steps.hash-config.outputs.config-hash }}
+          path: ${{ env.CHECK_RESULT_DIR }}
+
+      - name: Re-use cached result if valid
+        id: cached-result
+        if: |
+          steps.resolve-config.outputs.using-devcontainer == 'true'
+          && steps.cache.outputs.cache-hit == 'true'
+        run: |
+          echo "Cache hit for dev container configuration. Validating cached result..."
+          if [ ! -f "$CHECK_RESULT" ]; then
+            echo "Cached result file is missing. Falling back to a fresh check."
+            echo "reused=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          success=$(jq -er '.success | select(type == "boolean")' "$CHECK_RESULT" 2>/dev/null || true)
+          if [ -z "$success" ]; then
+            echo "Cached result is malformed. Falling back to a fresh check."
+            echo "reused=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Cached result is valid. Re-using previous result."
+          echo ""
+          cat "$CHECK_RESULT"
+          echo ""
+          echo "reused=true" >> "$GITHUB_OUTPUT"
+
+          if [ "$success" = "true" ]; then
+            echo "Previous check was successful."
+            exit 0
+          else
+            echo "Previous check was unsuccessful."
+            exit 1
+          fi
+        # outputs: reused
+
+        # Cache miss - check the dev container configuration and cache the result
+      - name: Check for dev container health
+        id: health-check
+        if: |
+          steps.resolve-config.outputs.using-devcontainer == 'true'
+          && steps.cached-result.outputs.reused != 'true'
+        timeout-minutes: 15
+        run: |
+          devcontainer build --workspace-folder .
+          devcontainer up --workspace-folder .
+          devcontainer exec --workspace-folder . -- bash -c 'echo "Dev container is running successfully." || exit 1'
+
+      # On check was successful
+      - name: Write successful check result with jq
+        id: write-success-result
+        if: |
+          always()
+          && steps.resolve-config.outputs.using-devcontainer == 'true'
+          && steps.cached-result.outputs.reused != 'true'
+          && steps.health-check.outcome == 'success'
+        run: |
+          mkdir --parents "$CHECK_RESULT_DIR"
+          jq --null-input \
+            --arg owner '${{ inputs.owner }}' \
+            --arg repo '${{ inputs.repo }}' \
+            --arg sha '${{ inputs.sha }}' \
+            --arg configHash '${{ steps.hash-config.outputs.config-hash }}' \
+            --arg checkedAt "$(date --utc +'%Y-%m-%dT%H:%M:%SZ')" \
+            '{
+              success: true,
+              owner: $owner,
+              repo: $repo,
+              sha: $sha,
+              configHash: $configHash,
+              checkedAt: $checkedAt
+            }' > "$CHECK_RESULT"
+
+      # On check was failure
+      - name: Write failed check result with jq
+        id: write-failed-result
+        if: |
+          always()
+          && steps.resolve-config.outputs.using-devcontainer == 'true'
+          && steps.cached-result.outputs.reused != 'true'
+          && steps.health-check.outcome == 'failure'
+        run: |
+          mkdir --parents "$CHECK_RESULT_DIR"
+          jq --null-input \
+            --arg owner '${{ inputs.owner }}' \
+            --arg repo '${{ inputs.repo }}' \
+            --arg sha '${{ inputs.sha }}' \
+            --arg configHash '${{ steps.hash-config.outputs.config-hash }}' \
+            --arg checkedAt "$(date --utc +'%Y-%m-%dT%H:%M:%SZ')" \
+            '{
+              success: false,
+              owner: $owner,
+              repo: $repo,
+              sha: $sha,
+              configHash: $configHash,
+              checkedAt: $checkedAt
+            }' > "$CHECK_RESULT"
+
+      - name: Save check result to cache
+        if: |
+          always()
+          && steps.resolve-config.outputs.using-devcontainer == 'true'
+          && steps.cached-result.outputs.reused != 'true'
+          && (steps.write-success-result.outcome == 'success' || steps.write-failed-result.outcome == 'success')
+        uses: actions/cache/save@v5
+        with:
+          key: check-result-${{ inputs.owner }}-${{ inputs.repo }}-${{
+            steps.hash-config.outputs.config-hash }}
+          path: ${{ env.CHECK_RESULT_DIR }}
