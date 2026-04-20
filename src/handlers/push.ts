@@ -2,7 +2,7 @@ import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
 import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
 import { isDevContainerFileChanged } from '../devcontainer.js';
-import { branchNameFromRef, isRefTag } from '../git.js';
+import { branchNameFromRef } from '../git.js';
 import { createWorkflowDispatch } from '../octokit.js';
 import type { WorkflowInputs } from '../types.js';
 import { matchPatterns } from '../utils.js';
@@ -28,27 +28,26 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	const ref = payload.ref;
 	const sha = payload.after;
 
-	log.debug(`Push handler triggered on: ${payload.repository.full_name}@${ref}`);
+	log.debug(`Push handler triggered on: ${repo.owner}/${repo.repo}@${ref}`);
 
-	// Ignore new branch creations
-	if (payload.created || payload.before === GITHUB_NULL_SHA) {
-		log.debug(`Ignoring new branch creation event (${ref}).`);
+	// Derived variables
+	const isBranchCreated = payload.created || payload.before === GITHUB_NULL_SHA;
+	const isBranchDeleted = payload.deleted || payload.after === GITHUB_NULL_SHA;
+	const branchName = branchNameFromRef(ref);
+
+	// Only process push events for branches (not tags or other refs)
+	if (!branchName) {
+		log.warn(`Unable to extract branch name from ref: ${ref}. Ignoring event.`);
 		return;
 	}
 
 	// Ignore deletions
-	if (payload.deleted || payload.after === GITHUB_NULL_SHA) {
+	if (isBranchDeleted) {
 		log.debug(`Ignoring branch deletion event (${ref}).`);
 		return;
 	}
 
-	// Ignore tag pushes
-	if (isRefTag(ref)) {
-		log.debug(`Ignoring tag push event (${ref}).`);
-		return;
-	}
-
-	// Fail-fast
+	// Check if the push event should be processed based on associated pull requests and branch patterns
 	const { data: pullRequests } = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
 		...repo,
 		commit_sha: sha
@@ -62,14 +61,13 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 				.map((pr) => `#${pr.number} (${pr.base.ref})`)
 				.join(', ')}. Checking if any of the base branches match configured PR_BRANCHES...`
 		);
-		if (
-			!pullRequests.some((pr) => {
-				const baseBranchName = pr.base.ref; // * Not refs/heads/ format, just the branch name
-				return matchPatterns(baseBranchName, appConfig.PR_BRANCHES, {
-					[DEFAULT_BRANCH_ALIAS]: defaultBranchName
-				});
-			})
-		) {
+		const isBaseBranchMatched = pullRequests.some((pr) => {
+			const baseBranchName = pr.base.ref; // * Not refs/heads/ format, just the branch name
+			return matchPatterns(baseBranchName, appConfig.PR_BRANCHES, {
+				[DEFAULT_BRANCH_ALIAS]: defaultBranchName
+			});
+		});
+		if (!isBaseBranchMatched) {
 			log.debug(
 				`No associated pull request found with base branch matching configured PR_BRANCHES: ${appConfig.PR_BRANCHES}. Ignoring event.`
 			);
@@ -80,16 +78,10 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 		log.debug(
 			`Push event is not associated with any pull request. Checking if branch matches configured PUSH_BRANCHES...`
 		);
-		const branchName = branchNameFromRef(ref);
-		if (!branchName) {
-			log.warn(`Unable to extract branch name from ref: ${ref}. Ignoring event.`);
-			return;
-		}
-		if (
-			!matchPatterns(branchName, appConfig.PUSH_BRANCHES, {
-				[DEFAULT_BRANCH_ALIAS]: defaultBranchName
-			})
-		) {
+		const isBranchMatched = matchPatterns(branchName, appConfig.PUSH_BRANCHES, {
+			[DEFAULT_BRANCH_ALIAS]: defaultBranchName
+		});
+		if (!isBranchMatched) {
 			log.debug(
 				`Branch ${branchName} does not match configured PUSH_BRANCHES: ${appConfig.PUSH_BRANCHES}. Ignoring event.`
 			);
@@ -100,20 +92,34 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	// Collect all changed files from the push event
 	log.debug('Collecting changed files from the push event...');
 	let changedFiles: string[] = [];
-	for await (const response of octokit.paginate.iterator(
-		octokit.rest.repos.compareCommitsWithBasehead,
-		{
-			...repo,
-			basehead: `${payload.before}...${payload.after}`
-		}
-	)) {
-		const { data: comparison } = response;
-		changedFiles = changedFiles.concat(
-			// @ts-expect-error The types for the response are not correctly inferred
-			(comparison.files as DiffEntries)
-				?.filter((f) => f.status !== 'unchanged')
-				.map((f) => f.filename) ?? []
+	if (isBranchCreated) {
+		// For new branches, you can't use the compare API to get the changed files since there is no "before" commit.
+		log.debug(
+			`Branch creation detected (${ref}). Getting changed files from the commits in the push event...`
 		);
+		changedFiles = payload.commits.flatMap((commit) => [
+			...(commit.added ?? []),
+			...(commit.modified ?? []),
+			...(commit.removed ?? [])
+		]);
+	} else {
+		// Branch deletion event is already filtered out above, so this must be an update to an existing branch
+		// So we can use compare API to get the list of changed files between the before and after commits
+		for await (const response of octokit.paginate.iterator(
+			octokit.rest.repos.compareCommitsWithBasehead,
+			{
+				...repo,
+				basehead: `${payload.before}...${payload.after}`
+			}
+		)) {
+			const { data: comparison } = response;
+			changedFiles = changedFiles.concat(
+				// @ts-expect-error The types for the response are not correctly inferred
+				(comparison.files as DiffEntries)
+					?.filter((f) => f.status !== 'unchanged')
+					.map((f) => f.filename) ?? []
+			);
+		}
 	}
 
 	// Check if any of the changed files are related to devcontainer configuration

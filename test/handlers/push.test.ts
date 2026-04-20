@@ -122,15 +122,25 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 	]);
 });
 
-test('ignore new branch creations', async ({ probot }) => {
+test('on new branch creations, use commits in payload to determine changed files', async ({
+	probot
+}) => {
 	// Arrange
-	const newBranchPayload = {
-		...payload,
-		created: true,
-		before: '0000000000000000000000000000000000000000',
-		ref: 'refs/heads/new-branch'
-	};
+	const newBranchPayload = structuredClone(payload);
+	newBranchPayload.created = true;
+	newBranchPayload.before = '0000000000000000000000000000000000000000';
+	newBranchPayload.ref = 'refs/heads/new-branch';
+
 	const mock = nock('https://api.github.com')
+		.post(`/app/installations/${installationId}/access_tokens`)
+		.reply(200, {
+			token: 'test',
+			permissions: {
+				actions: 'write'
+			}
+		})
+		.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
+		.reply(200, [])
 		.post(
 			'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
 		)
