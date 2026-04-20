@@ -37,7 +37,7 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 
 	// Only process push events for branches (not tags or other refs)
 	if (!branchName) {
-		log.warn(`Unable to extract branch name from ref: ${ref}. Ignoring event.`);
+		log.debug(`Ignoring non-branch ref: ${ref}.`);
 		return;
 	}
 
