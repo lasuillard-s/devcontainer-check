@@ -2,6 +2,8 @@ name: Dev Container Check
 run-name: Check ${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
 
 on:
+  # Testing workflow dispatches for non-default branch with GitHub CLI:
+  #   `echo '{"owner": "<OWNER>", "repo": "<REPO>", "sha": "<SHA>"}' | gh workflow run devcontainer-check.yaml --ref <BRANCH> --json`
   workflow_dispatch:
     inputs:
       owner:
