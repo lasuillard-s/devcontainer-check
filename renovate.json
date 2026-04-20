@@ -2,5 +2,18 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>lasuillard-s/renovate-config"
+  ],
+  "customManagers": [
+    {
+      // Custom manager to update npm packages installed globally in GitHub Actions workflow files
+      "customType": "regex",
+      "fileMatch": ["^\\.github/workflows/.+\\.ya?ml$"],
+      "matchStrings": [
+        "npm install (?:-g|--global) (?<content>.+)\\n",
+        "(?<packageName>[a-zA-Z0-9-@/]+)@(?<currentValue>[0-9a-zA-Z.-]+)"
+      ],
+      "matchStringsStrategy": "recursive",
+      "datasourceTemplate": "npm"
+    }
   ]
 }
