@@ -120,9 +120,7 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 	]);
 });
 
-test('on new branch creations, use commits in payload to determine changed files', async ({
-	probot
-}) => {
+test('on new branch creations, compare commits with default branch', async ({ probot }) => {
 	// Arrange
 	const newBranchPayload = structuredClone(payload);
 	newBranchPayload.created = true;
@@ -139,6 +137,10 @@ test('on new branch creations, use commits in payload to determine changed files
 		})
 		.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
 		.reply(200, [])
+		.get(`/repos/devcontainer-check-org/devcontainer-check/compare/main...${payload.after}`)
+		.reply(200, {
+			files: [{ filename: '.devcontainer/devcontainer.json', status: 'modified' }]
+		})
 		.get('/repos/acme/devcontainer-check-runner')
 		.reply(200, { default_branch: 'main' })
 		.post(

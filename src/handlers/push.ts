@@ -89,37 +89,22 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 		}
 	}
 
-	// Collect all changed files from the push event
-	log.debug('Collecting changed files from the push event...');
 	let changedFiles: string[] = [];
-	if (isBranchCreated) {
-		// For new branches, you can't use the compare API to get the changed files since there is no "before" commit.
-		log.debug(
-			`Branch creation detected (${ref}). Getting changed files from the commits in the push event...`
-		);
-		changedFiles = payload.commits.flatMap((commit) => [
-			...(commit.added ?? []),
-			...(commit.modified ?? []),
-			...(commit.removed ?? [])
-		]);
-	} else {
-		// Branch deletion event is already filtered out above, so this must be an update to an existing branch
-		// So we can use compare API to get the list of changed files between the before and after commits
-		for await (const response of octokit.paginate.iterator(
-			octokit.rest.repos.compareCommitsWithBasehead,
-			{
-				...repo,
-				basehead: `${payload.before}...${payload.after}`
-			}
-		)) {
-			const { data: comparison } = response;
-			changedFiles = changedFiles.concat(
-				// @ts-expect-error The types for the response are not correctly inferred
-				(comparison.files as DiffEntries)
-					?.filter((f) => f.status !== 'unchanged')
-					.map((f) => f.filename) ?? []
-			);
+	const before = isBranchCreated ? defaultBranchName : payload.before; // For new branches, compare with the default branch
+	for await (const response of octokit.paginate.iterator(
+		octokit.rest.repos.compareCommitsWithBasehead,
+		{
+			...repo,
+			basehead: `${before}...${payload.after}`
 		}
+	)) {
+		const { data: comparison } = response;
+		changedFiles = changedFiles.concat(
+			// @ts-expect-error The types for the response are not correctly inferred
+			(comparison.files as DiffEntries)
+				?.filter((f) => f.status !== 'unchanged')
+				.map((f) => f.filename) ?? []
+		);
 	}
 
 	// Check if any of the changed files are related to devcontainer configuration
