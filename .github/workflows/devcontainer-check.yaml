@@ -89,7 +89,7 @@ jobs:
         run: |
           echo 'Validating devcontainer configuration against schema...'
           schema_sha='c95ffeed1d059abfe9ffbe79762dc2fa4e7c2421'
-          check-jsonschema --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" -d .devcontainer/devcontainer.json
+          check-jsonschema --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" .devcontainer/devcontainer.json
 
       - name: Check for dev container configuration
         if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' }}
