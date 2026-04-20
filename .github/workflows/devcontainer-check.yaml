@@ -43,6 +43,12 @@ jobs:
           retention-days: 1
 
       # Main logic of the workflow to check for dev container configuration
+      - name: Install devcontainer CLI
+        run: npm install --global @devcontainers/cli@0.86.0
+
+      - name: Install check-jsonschema CLI
+        run: pip install "check-jsonschema==0.37.1"
+
       - name: Get application token
         id: get-token
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3
@@ -77,6 +83,13 @@ jobs:
           fi
           echo 'No dev container configuration found in the repository.'
           echo 'using-dev-container=false' >> $GITHUB_OUTPUT
+
+      - name: Validate dev container configuration JSON schema
+        if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' }}
+        run: |
+          echo 'Validating devcontainer configuration against schema...'
+          schema_sha='c95ffeed1d059abfe9ffbe79762dc2fa4e7c2421'
+          check-jsonschema --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" .devcontainer/devcontainer.json
 
       - name: Check for dev container configuration
         if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' }}
