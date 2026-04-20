@@ -14,7 +14,7 @@ type DiffEntries = Awaited<
 >['data']['files'];
 
 /** Special GitHub ref value indicating a non-existent commit (e.g., for new branch creations or deletions) */
-const GITHUB_NONEXISTENT_REF = '0000000000000000000000000000000000000000';
+const GITHUB_NULL_SHA = '0000000000000000000000000000000000000000';
 
 /**
  * Handler for push events on the target repository.
@@ -31,13 +31,13 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	log.debug(`Push handler triggered on: ${payload.repository.full_name}@${ref}`);
 
 	// Ignore new branch creations
-	if (payload.created || payload.before === GITHUB_NONEXISTENT_REF) {
+	if (payload.created || payload.before === GITHUB_NULL_SHA) {
 		log.debug(`Ignoring new branch creation event (${ref}).`);
 		return;
 	}
 
 	// Ignore deletions
-	if (payload.deleted || payload.after === GITHUB_NONEXISTENT_REF) {
+	if (payload.deleted || payload.after === GITHUB_NULL_SHA) {
 		log.debug(`Ignoring branch deletion event (${ref}).`);
 		return;
 	}
