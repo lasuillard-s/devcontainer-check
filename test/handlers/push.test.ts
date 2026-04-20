@@ -107,19 +107,25 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 			files: [{ filename: 'package.json', status: 'modified' }]
 		})
 		.post(
-			'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
+			`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
+			(body: unknown) => {
+				expect(body).toStrictEqual({
+					state: 'success',
+					context: 'Dev Container Check',
+					description: 'Dev container configuration did not change.'
+				});
+				return true;
+			}
 		)
-		.reply(204);
+		.reply(201);
 
 	// Act
 	// @ts-expect-error Ignore fixture modification
 	await probot.receive({ id: '', name: 'push', payload: payloadWithoutDevcontainerFiles });
 
 	// Assert
-	expect(mock.isDone()).toBe(false);
-	expect(mock.pendingMocks()).toStrictEqual([
-		'POST https://api.github.com:443/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
-	]);
+	expect(mock.isDone()).toBe(true);
+	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
 test('does not dispatch a workflow for tag pushes', async ({ probot }) => {
@@ -128,21 +134,15 @@ test('does not dispatch a workflow for tag pushes', async ({ probot }) => {
 		...payload,
 		ref: 'refs/tags/v1.0.0'
 	};
-	const mock = nock('https://api.github.com')
-		.post(
-			'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
-		)
-		.reply(204);
+	const mock = nock('https://api.github.com');
 
 	// Act
 	// @ts-expect-error Ignore fixture modification
 	await probot.receive({ id: '', name: 'push', payload: tagPushPayload });
 
 	// Assert
-	expect(mock.isDone()).toBe(false);
-	expect(mock.pendingMocks()).toStrictEqual([
-		'POST https://api.github.com:443/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
-	]);
+	expect(mock.isDone()).toBe(true);
+	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
 describe('when push has associated pull requests', () => {
@@ -216,21 +216,15 @@ describe('when push has associated pull requests', () => {
 				.post(`/app/installations/${installationId}/access_tokens`)
 				.reply(200, { token: 'test', permissions: { actions: 'write' } })
 				.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
-				.reply(200, [{ base: { ref: 'main' } }])
-				.post(
-					'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
-				)
-				.reply(204);
+				.reply(200, [{ base: { ref: 'main' } }]);
 
 			// Act
 			// @ts-expect-error Ignore fixture modification
 			await probot.receive({ id: '', name: 'push', payload });
 
 			// Assert
-			expect(mock.isDone()).toBe(false);
-			expect(mock.pendingMocks()).toStrictEqual([
-				'POST https://api.github.com:443/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
-			]);
+			expect(mock.isDone()).toBe(true);
+			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 	});
 });
@@ -248,20 +242,14 @@ describe('when push has no associated pull requests', () => {
 			.post(`/app/installations/${installationId}/access_tokens`)
 			.reply(200, { token: 'test', permissions: { actions: 'write' } })
 			.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
-			.reply(200, [])
-			.post(
-				'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
-			)
-			.reply(204);
+			.reply(200, []);
 
 		// Act
 		// @ts-expect-error Ignore fixture modification
 		await probot.receive({ id: '', name: 'push', payload });
 
 		// Assert
-		expect(mock.isDone()).toBe(false);
-		expect(mock.pendingMocks()).toStrictEqual([
-			'POST https://api.github.com:443/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
-		]);
+		expect(mock.isDone()).toBe(true);
+		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 });

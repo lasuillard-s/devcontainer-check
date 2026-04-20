@@ -103,6 +103,13 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	log.debug(`Checking ${changedFiles.length} changed files for devcontainer-related changes...`);
 	if (!isDevContainerFileChanged(changedFiles)) {
 		log.debug('No devcontainer-related file changes detected. Skipping workflow dispatch.');
+		await octokit.rest.repos.createCommitStatus({
+			...repo,
+			sha,
+			state: 'success',
+			context: COMMIT_STATUS_CONTEXT,
+			description: 'Dev container configuration did not change.'
+		});
 		return;
 	}
 

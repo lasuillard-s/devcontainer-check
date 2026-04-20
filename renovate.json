@@ -2,5 +2,33 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>lasuillard-s/renovate-config"
+  ],
+  "customManagers": [
+    {
+      // Custom manager to update npm packages installed globally in GitHub Actions workflow files
+      "customType": "regex",
+      "fileMatch": ["^\\.github/workflows/.+\\.ya?ml$"],
+      "matchStrings": [
+        // Matches: `npm install -g pkg@1.0.0 @scope/pkg@2.0.0-beta.1`
+        "npm install (?:-g|--global) (?<content>.+)\n",
+        // Extracts packageName and currentValue, e.g. `@scope/pkg` @ `2.0.0-beta.1`
+        "(?<packageName>(?:@[a-zA-Z0-9._-]+\\/)?[a-zA-Z0-9._-]+)@(?<currentValue>[0-9A-Za-z.+-]+)"
+      ],
+      "matchStringsStrategy": "recursive",
+      "datasourceTemplate": "npm"
+    },
+    {
+      // Custom manager to update Python packages installed in GitHub Actions workflow files
+      "customType": "regex",
+      "fileMatch": ["^\\.github/workflows/.+\\.ya?ml$"],
+      "matchStrings": [
+        // Matches: `pip install requests==2.31.0 my-pkg==1!2.0+local`
+        "pip install (?<content>.+)\n",
+        // Extracts packageName and currentValue, e.g. `my-pkg` == `1!2.0+local`
+        "(?<packageName>[A-Za-z0-9][A-Za-z0-9._-]*)==(?<currentValue>[0-9A-Za-z.+!_-]+)"
+      ],
+      "matchStringsStrategy": "recursive",
+      "datasourceTemplate": "pypi"
+    }
   ]
 }

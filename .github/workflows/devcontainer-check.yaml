@@ -49,10 +49,12 @@ jobs:
           path: inputs.json
           retention-days: 1
 
-      # Workflow set-up
-      - name: Install dev container CLI
-        run: |
-          npm install --global @devcontainers/cli
+      # Main logic of the workflow to check for dev container configuration
+      - name: Install devcontainer CLI
+        run: npm install --global @devcontainers/cli@0.86.0
+
+      - name: Install check-jsonschema CLI
+        run: pip install "check-jsonschema==0.37.1"
 
       - name: Get application token
         id: get-token
@@ -75,6 +77,7 @@ jobs:
       # Calculate hash of devcontainer configuration
       - name: Check dev container configuration
         id: resolve-config
+        # outputs: using-devcontainer
         run: |
           if [ -d '.devcontainer' ]; then
             echo 'Found .devcontainer directory, using it as the dev container configuration.'
@@ -89,13 +92,13 @@ jobs:
           fi
           echo 'No dev container configuration found in the repository.'
           echo 'using-devcontainer=false' >> "$GITHUB_OUTPUT"
-        # outputs: using-devcontainer
 
       - name: Calculate hash of dev container configuration
         id: hash-config
         if: steps.resolve-config.outputs.using-devcontainer == 'true'
         timeout-minutes: 5
         shell: bash
+        # outputs: config-hash
         run: |
           config_hash="$( \
             devcontainer read-configuration \
@@ -121,9 +124,8 @@ jobs:
             echo "Failed to calculate configuration hash. The dev container configuration might be invalid."
             exit 1
           fi
-        # outputs: config-hash
 
-        # Restore previous check result from cache and re-use it
+      # Restore previous check result from cache and re-use it
       - name: Restore previous check result from cache
         id: cache
         if: steps.resolve-config.outputs.using-devcontainer == 'true'
@@ -138,6 +140,7 @@ jobs:
         if: |
           steps.resolve-config.outputs.using-devcontainer == 'true'
           && steps.cache.outputs.cache-hit == 'true'
+        # outputs: reused
         run: |
           echo "Cache hit for dev container configuration. Validating cached result..."
           if [ ! -f "$CHECK_RESULT" ]; then
@@ -166,9 +169,12 @@ jobs:
             echo "Previous check was unsuccessful."
             exit 1
           fi
-        # outputs: reused
 
-        # Cache miss - check the dev container configuration and cache the result
+      # Cache miss - check the dev container configuration and cache the result
+      - name: Validate dev container configuration JSON schema
+        if: ${{ steps.resolve-config.outputs.using-devcontainer == 'true' }}
+        run: |
+
       - name: Check for dev container health
         id: health-check
         if: |
@@ -176,8 +182,15 @@ jobs:
           && steps.cached-result.outputs.reused != 'true'
         timeout-minutes: 15
         run: |
+          echo 'Validating devcontainer configuration against schema...'
+          schema_sha='c95ffeed1d059abfe9ffbe79762dc2fa4e7c2421' # Mar 20, 2026
+          check-jsonschema --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" .devcontainer/devcontainer.json
+
+          echo 'Building and starting dev container...'
           devcontainer build --workspace-folder .
           devcontainer up --workspace-folder .
+
+          echo 'Running health check command in dev container...'
           devcontainer exec --workspace-folder . -- bash -c 'echo "Dev container is running successfully." || exit 1'
 
       # On check was successful
