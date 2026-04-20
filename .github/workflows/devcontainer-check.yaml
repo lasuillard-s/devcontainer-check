@@ -43,6 +43,9 @@ jobs:
           retention-days: 1
 
       # Main logic of the workflow to check for dev container configuration
+      - name: Install devcontainer and ajv CLI
+        run: npm install --global @devcontainers/cli ajv-cli
+
       - name: Get application token
         id: get-token
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3
@@ -77,6 +80,18 @@ jobs:
           fi
           echo 'No dev container configuration found in the repository.'
           echo 'using-dev-container=false' >> $GITHUB_OUTPUT
+
+      - name: Validate dev container configuration JSON schema
+        if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' }}
+        run: |
+          echo "Downloading devcontainer schema..."
+          curl --fail --silent --show-error --location --output /tmp/devContainer.schema.json https://raw.githubusercontent.com/devcontainers/spec/refs/heads/main/schemas/devContainer.schema.json
+
+          echo "Reading devcontainer configuration..."
+          devcontainer read-configuration --workspace-folder . --include-features-configuration --include-merged-configuration 2>/dev/null > /tmp/devcontainer-config.json
+
+          echo "Validating devcontainer configuration against schema..."
+          ajv -s /tmp/devContainer.schema.json -d /tmp/devcontainer-config.json
 
       - name: Check for dev container configuration
         if: ${{ steps.check-dev-container.outputs.using-dev-container == 'true' }}
