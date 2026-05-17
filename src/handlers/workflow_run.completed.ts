@@ -15,9 +15,13 @@ export default async function handler(
 	appConfig: AppConfig
 ) {
 	const { octokit, payload, log } = context;
+	const repo = context.repo();
+
+	log.debug(
+		`Workflow run completed handler triggered on: ${payload.repository.full_name}, workflow: ${payload.workflow_run.name}, conclusion: ${payload.workflow_run.conclusion}`
+	);
 
 	// Only listen to workflow run completion events of the runner repository
-	const repo = context.repo();
 	if (
 		repo.owner !== appConfig.RUNNER_REPOSITORY.owner ||
 		repo.repo !== appConfig.RUNNER_REPOSITORY.repo ||

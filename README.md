@@ -17,23 +17,23 @@ sequenceDiagram
 	participant server as Webhook Handler
 	participant runner as Runner Repository
 
-  target ->> server: Push events
+  target ->> server: Event (push)
   server ->> server: Check if dev container configuration changed
   server ->> runner: Trigger workflow (workflow_dispatch)
   server ->> target: Update commit statuses (pending)
   runner ->> target: Checkout repository
   runner ->> runner: Check dev container configuration
-  runner ->> server: workflow_run.completed event
+  runner ->> server: Event (workflow_run.completed)
   server ->> target: Update commit statuses (success or failure)
 ```
 
-- **Why use GitHub Actions?**
+- **Why run tasks in GitHub Actions?**
 
-  To validate, build and test containers. Most validations would be quick, but building and running containers takes some time and resource-heavy work. We reuse GitHub Actions for it.
+  To validate, build and test containers we need Docker which is not available in serverless runtimes. Instead of setting it up on our own, we reuse GitHub Actions for it.
 
 - **Why should I self-host this app?**
 
-  Because we have no infrastructure to run the tasks, we use the GitHub Actions infra. It will work on your GitHub Actions infra and consume the CI minutes of yours.
+  Because we have no infrastructure to run the tasks for you, this app uses your GitHub Actions infra. You self-host this app and it will work on your GitHub Actions infra and consume the CI minutes of yours.
 
 ## ⚙️ Hosting the application
 
