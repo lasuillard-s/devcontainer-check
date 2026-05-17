@@ -171,10 +171,6 @@ jobs:
           fi
 
       # Cache miss - check the dev container configuration and cache the result
-      - name: Validate dev container configuration JSON schema
-        if: ${{ steps.resolve-config.outputs.using-devcontainer == 'true' }}
-        run: |
-
       - name: Check for dev container health
         id: health-check
         if: |
@@ -184,7 +180,9 @@ jobs:
         run: |
           echo 'Validating devcontainer configuration against schema...'
           schema_sha='c95ffeed1d059abfe9ffbe79762dc2fa4e7c2421' # Mar 20, 2026
-          check-jsonschema --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" .devcontainer/devcontainer.json
+          check-jsonschema \
+            --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" \
+            .devcontainer/devcontainer.json
 
           echo 'Building and starting dev container...'
           devcontainer build --workspace-folder .
