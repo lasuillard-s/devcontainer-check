@@ -100,14 +100,18 @@ jobs:
         shell: bash
         # outputs: config-hash
         run: |
+          echo "::group::Calculating hash of dev container configuration"
           config="$( \
             devcontainer read-configuration \
               --workspace-folder . \
               --include-features-configuration \
               --include-merged-configuration \
           )"
-          echo "Raw dev container configuration: $config"
+          echo "Raw dev container configuration:"
+          echo "$config"
+          echo "::endgroup::"
 
+          echo "::group::Sanitizing dev container configuration for hashing"
           sanitized_config="$( \
             echo "$config" \
             | jq --compact-output --sort-keys '
@@ -120,20 +124,26 @@ jobs:
                 .mergedConfiguration.configFilePath
               )' \
             )"
-          echo "Sanitized dev container configuration: $sanitized_config"
+          echo "Sanitized dev container configuration:"
+          echo "$sanitized_config"
+          echo "::endgroup::"
 
+          echo "::group::Calculating hash of sanitized dev container configuration"
           config_hash="$( \
             echo "$sanitized_config" \
             | sha256sum \
             | awk '{print $1}' \
           )"
           echo "Calculated configuration hash: $config_hash"
+          echo "::endgroup::"
 
+          echo "::group::Exporting output variables"
           echo "config-hash=${config_hash}" | tee --append "$GITHUB_OUTPUT"
           if [ -z "$config_hash" ]; then
             echo "Failed to calculate configuration hash. The dev container configuration might be invalid."
             exit 1
           fi
+          echo "::endgroup::"
 
       # Restore previous check result from cache and re-use it
       - name: Restore previous check result from cache
@@ -188,18 +198,24 @@ jobs:
           && steps.cached-result.outputs.reused != 'true'
         timeout-minutes: 15
         run: |
+          echo "::group::Validating dev container configuration schema"
           echo 'Validating devcontainer configuration against schema...'
           schema_sha='c95ffeed1d059abfe9ffbe79762dc2fa4e7c2421' # Mar 20, 2026
           check-jsonschema \
             --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" \
             .devcontainer/devcontainer.json
+          echo "::endgroup::"
 
+          echo "::group::Building and starting dev container"
           echo 'Building and starting dev container...'
           devcontainer build --workspace-folder .
           devcontainer up --workspace-folder .
+          echo "::endgroup::"
 
+          echo "::group::Running health check command in dev container"
           echo 'Running health check command in dev container...'
           devcontainer exec --workspace-folder . -- bash -c 'echo "Dev container is running successfully." || exit 1'
+          echo "::endgroup::"
 
       # On check was successful
       - name: Write successful check result with jq
