@@ -100,12 +100,16 @@ jobs:
         shell: bash
         # outputs: config-hash
         run: |
-          config_hash="$( \
+          config="$( \
             devcontainer read-configuration \
               --workspace-folder . \
               --include-features-configuration \
               --include-merged-configuration \
-              2>/dev/null \
+          )"
+          echo "Raw dev container configuration: $config"
+
+          sanitized_config="$( \
+            echo "$config" \
             | jq --compact-output --sort-keys '
               del(
                 .workspace.workspaceFolder,
@@ -114,11 +118,17 @@ jobs:
                 .featuresConfiguration.dstFolder,
                 .featuresConfiguration.featureSets[].features[].cachePath,
                 .mergedConfiguration.configFilePath
-              )
-              ' \
+              )' \
+            )"
+          echo "Sanitized dev container configuration: $sanitized_config"
+
+          config_hash="$( \
+            echo "$sanitized_config" \
             | sha256sum \
             | awk '{print $1}' \
           )"
+          echo "Calculated configuration hash: $config_hash"
+
           echo "config-hash=${config_hash}" | tee --append "$GITHUB_OUTPUT"
           if [ -z "$config_hash" ]; then
             echo "Failed to calculate configuration hash. The dev container configuration might be invalid."
