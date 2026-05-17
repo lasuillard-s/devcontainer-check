@@ -2,8 +2,8 @@ import path from 'node:path';
 import { Context } from 'probot';
 import { AppConfig } from '../config.js';
 import { downloadArtifactFileJSON } from '../octokit.js';
-import type { WorkflowInputs } from '../types.js';
 import { COMMIT_STATUS_CONTEXT } from './common.js';
+import type { WorkflowInputs } from './types.js';
 
 /**
  * Handler for workflow run completed events on the runner repository.

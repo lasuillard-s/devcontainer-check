@@ -4,9 +4,9 @@ import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
 import { isDevContainerFileChanged } from '../devcontainer.js';
 import { branchNameFromRef } from '../git.js';
 import { createWorkflowDispatch } from '../octokit.js';
-import type { WorkflowInputs } from '../types.js';
 import { matchPatterns } from '../utils.js';
 import { COMMIT_STATUS_CONTEXT } from './common.js';
+import type { WorkflowInputs } from './types.js';
 
 /** Helper type to extract the correct type for the files array in the response. */
 type DiffEntries = Awaited<
