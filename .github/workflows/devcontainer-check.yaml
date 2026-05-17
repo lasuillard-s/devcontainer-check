@@ -106,7 +106,7 @@ jobs:
               --include-features-configuration \
               --include-merged-configuration \
               2>/dev/null \
-            | jq -cS '
+            | jq --compact-output --sort-keys '
               del(
                 .workspace.workspaceFolder,
                 .workspace.workspaceMount,
