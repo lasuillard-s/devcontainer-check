@@ -51,7 +51,7 @@ jobs:
 
       # Main logic of the workflow to check for dev container configuration
       - name: Install devcontainer CLI
-        run: npm install --global @devcontainers/cli@0.86.1
+        run: npm install --global @devcontainers/cli@0.87.0
 
       - name: Install check-jsonschema CLI
         run: pip install "check-jsonschema==0.37.2"
