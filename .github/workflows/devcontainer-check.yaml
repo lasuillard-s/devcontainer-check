@@ -54,7 +54,7 @@ jobs:
         run: npm install --global @devcontainers/cli@0.86.1
 
       - name: Install check-jsonschema CLI
-        run: pip install "check-jsonschema==0.37.1"
+        run: pip install "check-jsonschema==0.37.2"
 
       - name: Get application token
         id: get-token
