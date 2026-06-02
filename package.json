@@ -31,7 +31,7 @@
 		"test": "vitest --run",
 		"test:watch": "vitest --silent --watch"
 	},
-	"packageManager": "npm@10.8.2",
+	"packageManager": "npm@10.9.8",
 	"dependencies": {
 		"adm-zip": "^0.5.17",
 		"minimatch": "^10.2.5",
