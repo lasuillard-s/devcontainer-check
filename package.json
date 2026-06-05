@@ -44,7 +44,7 @@
 		"@types/adm-zip": "0.5.8",
 		"@types/node": "24.12.4",
 		"@vercel/config": "0.5.1",
-		"@vitest/coverage-v8": "4.1.7",
+		"@vitest/coverage-v8": "4.1.8",
 		"eslint-config-prettier": "10.1.8",
 		"eslint-plugin-jsdoc": "63.0.1",
 		"globals": "17.6.0",
@@ -54,8 +54,8 @@
 		"prettier": "3.8.3",
 		"smee-client": "5.0.0",
 		"typescript": "6.0.3",
-		"typescript-eslint": "8.60.0",
-		"vitest": "4.1.7"
+		"typescript-eslint": "8.60.1",
+		"vitest": "4.1.8"
 	},
 	"overrides": {
 		"@types/pg": "8.20.0"
