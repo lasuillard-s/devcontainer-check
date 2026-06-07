@@ -49,21 +49,21 @@ Here we describe creating GitHub App with [Probot GitHub App Manifest Flow](http
 
 To get help of Probot, you should have Node.js and npm installed on your system. (or you can use Dev Container instead, which contains all the necessary dependencies by default.)
 
-```
+```bash
 # Fork or clone this repository
-git clone https://github.com/lasuillard-s/devcontainer-check.git
+$ git clone https://github.com/lasuillard-s/devcontainer-check.git
 
 # Move to the project directory
-cd devcontainer-check
+$ cd devcontainer-check
 
 # Install the dependencies
-npm install
+$ npm install
 
 # Build the application
-npm run build
+$ npm run build
 
 # Run the development server
-npm run dev
+$ npm run dev
 ```
 
 Then visit http://localhost:3000 to create a GitHub App with Probot's app registration helper.
