@@ -10,6 +10,7 @@ beforeEach(() => {
 	vi.stubEnv('CHECK_WORKFLOW_NAME', 'devcontainer-check.yaml');
 	vi.stubEnv('CHECK_WORKFLOW_REF', undefined);
 	vi.stubEnv('PUSH_BRANCHES', 'setup-devenv');
+	vi.stubEnv('RUNNER_REPOSITORY_DISABLE_GUARDRAIL', 'true');
 });
 
 test('dispatches a workflow when devcontainer files are changed', async ({ probot }) => {
@@ -35,6 +36,8 @@ test('dispatches a workflow when devcontainer files are changed', async ({ probo
 				{ filename: '.env.example', status: 'modified' }
 			]
 		})
+		.get('/repos/devcontainer-check-org/devcontainer-check')
+		.reply(200, { default_branch: 'main', visibility: 'public' })
 		.get('/repos/acme/devcontainer-check-runner')
 		.reply(200, { default_branch: 'main' })
 		.post(
@@ -143,6 +146,8 @@ test('on new branch creations, compare commits with default branch', async ({ pr
 		})
 		.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
 		.reply(200, [])
+		.get('/repos/devcontainer-check-org/devcontainer-check')
+		.reply(200, { default_branch: 'main', visibility: 'public' })
 		.get(`/repos/devcontainer-check-org/devcontainer-check/compare/main...${payload.after}`)
 		.reply(200, {
 			files: [{ filename: '.devcontainer/devcontainer.json', status: 'modified' }]
@@ -231,6 +236,8 @@ describe('when push has associated pull requests', () => {
 			.reply(200, { token: 'test', permissions: { actions: 'write' } })
 			.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
 			.reply(200, [{ base: { ref: 'main' } }])
+			.get('/repos/devcontainer-check-org/devcontainer-check')
+			.reply(200, { default_branch: 'main', visibility: 'public' })
 			.get(
 				`/repos/devcontainer-check-org/devcontainer-check/compare/${payload.before}...${payload.after}`
 			)

@@ -22,9 +22,18 @@ export default async function handler(
 	);
 
 	// Only listen to workflow run completion events of the runner repository
+	const runnerRepositories = [appConfig.RUNNER_REPOSITORY];
+	if (appConfig.RUNNER_REPOSITORY_FOR_PUBLIC) {
+		runnerRepositories.push(appConfig.RUNNER_REPOSITORY_FOR_PUBLIC);
+	}
+	if (appConfig.RUNNER_REPOSITORY_FOR_PRIVATE) {
+		runnerRepositories.push(appConfig.RUNNER_REPOSITORY_FOR_PRIVATE);
+	}
+	const isMatchingRunnerRepository = runnerRepositories.some(
+		(runnerRepo) => runnerRepo.owner === repo.owner && runnerRepo.repo === repo.repo
+	);
 	if (
-		repo.owner !== appConfig.RUNNER_REPOSITORY.owner ||
-		repo.repo !== appConfig.RUNNER_REPOSITORY.repo ||
+		!isMatchingRunnerRepository ||
 		// ? Match the workflow by file name instead of ID to allow users to customize the workflow file name
 		path.basename(
 			// * Workflow path could be null in some cases, but not clear under which circumstances.
@@ -40,7 +49,7 @@ export default async function handler(
 
 	// Find artifact that contains the workflow inputs to determine which repository and ref this workflow run is associated with
 	const inputs = await downloadArtifactFileJSON<WorkflowInputs>(octokit, {
-		...appConfig.RUNNER_REPOSITORY,
+		...repo,
 		workflowRunId: payload.workflow_run.id,
 		artifactName: appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME,
 		filePath: appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH

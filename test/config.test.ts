@@ -1,6 +1,6 @@
 import { Probot } from 'probot';
 import { beforeEach, describe, expect, vi } from 'vitest';
-import { DEFAULT_BRANCH_ALIAS, loadConfig } from '../src/config.js';
+import { AppConfig, DEFAULT_BRANCH_ALIAS, loadConfig } from '../src/config.js';
 import { test } from './helpers.js';
 
 describe('loadConfig', () => {
@@ -19,7 +19,8 @@ describe('loadConfig', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
 
 		// Act & Assert
-		expect(loadConfig(probot)).toStrictEqual({
+		const config = loadConfig(probot);
+		expect(config).toMatchObject({
 			RUNNER_REPOSITORY: { owner: 'acme', repo: 'devcontainer-check-runner' },
 			CHECK_WORKFLOW_NAME: 'devcontainer-check.yaml',
 			CHECK_WORKFLOW_REF: DEFAULT_BRANCH_ALIAS,
@@ -28,6 +29,9 @@ describe('loadConfig', () => {
 			PUSH_BRANCHES: [DEFAULT_BRANCH_ALIAS],
 			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS]
 		});
+		expect(
+			typeof (config as AppConfig & { resolveRunnerRepository?: unknown }).resolveRunnerRepository
+		).toBe('function');
 	});
 
 	test('loads valid config with explicit configuration values', () => {
@@ -41,7 +45,8 @@ describe('loadConfig', () => {
 		vi.stubEnv('PR_BRANCHES', 'feature/*');
 
 		// Act & Assert
-		expect(loadConfig(probot)).toStrictEqual({
+		const config = loadConfig(probot);
+		expect(config).toMatchObject({
 			RUNNER_REPOSITORY: { owner: 'acme', repo: 'devcontainer-check-runner' },
 			CHECK_WORKFLOW_NAME: 'custom-check.yaml',
 			CHECK_WORKFLOW_REF: 'release-1',
@@ -50,6 +55,9 @@ describe('loadConfig', () => {
 			PUSH_BRANCHES: ['main', 'develop'],
 			PR_BRANCHES: ['feature/*']
 		});
+		expect(
+			typeof (config as AppConfig & { resolveRunnerRepository?: unknown }).resolveRunnerRepository
+		).toBe('function');
 	});
 
 	test('logs and exits when RUNNER_REPOSITORY format is invalid', () => {
@@ -62,5 +70,49 @@ describe('loadConfig', () => {
 		// Act & Assert
 		expect(() => loadConfig(probot)).toThrow('process.exit called');
 		expect(exitSpy).toHaveBeenCalledWith(1);
+	});
+
+	test('resolves public runner repository for public target repos', () => {
+		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
+		vi.stubEnv('RUNNER_REPOSITORY_FOR_PUBLIC', 'acme/public-runner');
+
+		const config = loadConfig(probot);
+		expect(config.resolveRunnerRepository('public')).toStrictEqual({
+			owner: 'acme',
+			repo: 'public-runner'
+		});
+	});
+
+	test('resolves private runner repository for private target repos', () => {
+		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
+		vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
+
+		const config = loadConfig(probot);
+		expect(config.resolveRunnerRepository('private')).toStrictEqual({
+			owner: 'acme',
+			repo: 'private-runner'
+		});
+	});
+
+	test('falls back to RUNNER_REPOSITORY when visibility-specific runner is not configured', () => {
+		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
+
+		const config = loadConfig(probot);
+		expect(config.resolveRunnerRepository('private')).toStrictEqual({
+			owner: 'acme',
+			repo: 'runner'
+		});
+		expect(config.resolveRunnerRepository('public')).toStrictEqual({
+			owner: 'acme',
+			repo: 'runner'
+		});
+	});
+
+	test('parses RUNNER_REPOSITORY_DISABLE_GUARDRAIL as boolean', () => {
+		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
+		vi.stubEnv('RUNNER_REPOSITORY_DISABLE_GUARDRAIL', 'true');
+
+		const config = loadConfig(probot);
+		expect(config.RUNNER_REPOSITORY_DISABLE_GUARDRAIL).toBe(true);
 	});
 });

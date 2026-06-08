@@ -122,21 +122,36 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	}
 
 	// If devcontainer-related changes are detected, trigger the workflow dispatch event
-	let runnerRef = appConfig.CHECK_WORKFLOW_REF;
+	const targetRepoDetail = await octokit.rest.repos.get({ ...repo });
+	const targetVisibility = targetRepoDetail.data.visibility;
+	if (
+		targetVisibility !== 'public' &&
+		targetVisibility !== undefined &&
+		!appConfig.RUNNER_REPOSITORY_DISABLE_GUARDRAIL &&
+		!appConfig.RUNNER_REPOSITORY_FOR_PRIVATE
+	) {
+		log.info(
+			`Target repository is private but no private runner is configured and guardrail is not disabled. Skipping workflow dispatch.`
+		);
+		return;
+	}
+	const resolvedRunnerRepo = appConfig.resolveRunnerRepository(targetVisibility);
+	const resolvedRunnerRefRaw = appConfig.CHECK_WORKFLOW_REF;
+	let runnerRef = resolvedRunnerRefRaw;
 	if (runnerRef === DEFAULT_BRANCH_ALIAS) {
 		const { data: runnerRepoDetail } = await octokit.rest.repos.get({
-			...appConfig.RUNNER_REPOSITORY
+			...resolvedRunnerRepo
 		});
 		runnerRef = runnerRepoDetail.default_branch;
 	}
 	const inputs: WorkflowInputs = { ...repo, sha };
 	log.info(
 		'Devcontainer-related file change detected in this push.' +
-			` Triggering workflow ${appConfig.CHECK_WORKFLOW_NAME} in ${appConfig.RUNNER_REPOSITORY.owner}/${appConfig.RUNNER_REPOSITORY.repo}@${runnerRef}` +
+			` Triggering workflow ${appConfig.CHECK_WORKFLOW_NAME} in ${resolvedRunnerRepo.owner}/${resolvedRunnerRepo.repo}@${runnerRef}` +
 			` with inputs: ${JSON.stringify(inputs)}`
 	);
 	const workflowDispatchResult = await createWorkflowDispatch(octokit, {
-		...appConfig.RUNNER_REPOSITORY,
+		...resolvedRunnerRepo,
 		workflow_id: appConfig.CHECK_WORKFLOW_NAME,
 		ref: runnerRef,
 		inputs: inputs as unknown as Record<string, unknown>,
