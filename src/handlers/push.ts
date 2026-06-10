@@ -16,6 +16,83 @@ type DiffEntries = Awaited<
 /** Special GitHub ref value indicating a non-existent commit (e.g., for new branch creations or deletions) */
 const GITHUB_NULL_SHA = '0000000000000000000000000000000000000000';
 
+type PushCheckResult = { matched: true } | { matched: false; reason: string };
+
+/**
+ * Determines if a push event should be processed based on branch patterns and pull request associations.
+ * @param branchName The branch name from the push ref
+ * @param defaultBranch The default branch of the repository
+ * @param appConfig Application configuration
+ * @param pullRequests Pull requests associated with the push commit
+ * @returns object with matched status and reason for logging when not matched
+ */
+function shouldProcessPush(
+	branchName: string,
+	defaultBranch: string,
+	appConfig: AppConfig,
+	pullRequests: { number: number; base: { ref: string } }[]
+): PushCheckResult {
+	const hasAssociatedPR = pullRequests.length > 0;
+	if (hasAssociatedPR) {
+		const isBaseBranchMatched = pullRequests.some((pr) => {
+			const baseBranchName = pr.base.ref;
+			return matchPatterns(baseBranchName, appConfig.PR_BRANCHES, {
+				[DEFAULT_BRANCH_ALIAS]: defaultBranch
+			});
+		});
+		if (isBaseBranchMatched) {
+			return { matched: true };
+		}
+		return {
+			matched: false,
+			reason: `No associated pull request found with base branch matching configured PR_BRANCHES: ${appConfig.PR_BRANCHES}. Ignoring event.`
+		};
+	}
+	const isBranchMatched = matchPatterns(branchName, appConfig.PUSH_BRANCHES, {
+		[DEFAULT_BRANCH_ALIAS]: defaultBranch
+	});
+	if (isBranchMatched) {
+		return { matched: true };
+	}
+	return {
+		matched: false,
+		reason: `Branch ${branchName} does not match configured PUSH_BRANCHES: ${appConfig.PUSH_BRANCHES}. Ignoring event.`
+	};
+}
+
+/**
+ * Gets the list of changed files between two commits.
+ * @param octokit Octokit instance
+ * @param repo Repository info with owner and repo name
+ * @param repo.owner Repository owner
+ * @param repo.repo Repository name
+ * @param basehead The base..head reference string
+ * @returns Array of changed filenames
+ */
+async function getChangedFiles(
+	octokit: ProbotOctokit,
+	repo: { owner: string; repo: string },
+	basehead: string
+): Promise<string[]> {
+	const files: string[] = [];
+	for await (const response of octokit.paginate.iterator(
+		octokit.rest.repos.compareCommitsWithBasehead,
+		{
+			...repo,
+			basehead
+		}
+	)) {
+		const { data: comparison } = response;
+		files.push(
+			// @ts-expect-error The types for the response are not correctly inferred
+			...((comparison.files as DiffEntries)
+				?.filter((f) => f.status !== 'unchanged')
+				.map((f) => f.filename) ?? [])
+		);
+	}
+	return files;
+}
+
 /**
  * Handler for push events on the target repository.
  * @param context Event context
@@ -52,60 +129,29 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 		...repo,
 		commit_sha: sha
 	});
-	const hasAssociatedPR = pullRequests.length > 0;
-	if (hasAssociatedPR) {
-		// If the push event is associated with a pull request, only trigger the workflow
-		// when the base branch of the pull request matches the configured PR_BRANCHES.
-		log.debug(
-			`Push event is associated with ${pullRequests.length} pull request(s): ${pullRequests
-				.map((pr) => `#${pr.number} (${pr.base.ref})`)
-				.join(', ')}. Checking if any of the base branches match configured PR_BRANCHES...`
-		);
-		const isBaseBranchMatched = pullRequests.some((pr) => {
-			const baseBranchName = pr.base.ref; // * Not refs/heads/ format, just the branch name
-			return matchPatterns(baseBranchName, appConfig.PR_BRANCHES, {
-				[DEFAULT_BRANCH_ALIAS]: defaultBranchName
-			});
-		});
-		if (!isBaseBranchMatched) {
-			log.debug(
-				`No associated pull request found with base branch matching configured PR_BRANCHES: ${appConfig.PR_BRANCHES}. Ignoring event.`
-			);
-			return;
-		}
-	} else {
-		// Only trigger the workflow if the push event is on a branch that matches the configured PUSH_BRANCHES.
-		log.debug(
-			`Push event is not associated with any pull request. Checking if branch matches configured PUSH_BRANCHES...`
-		);
-		const isBranchMatched = matchPatterns(branchName, appConfig.PUSH_BRANCHES, {
-			[DEFAULT_BRANCH_ALIAS]: defaultBranchName
-		});
-		if (!isBranchMatched) {
-			log.debug(
-				`Branch ${branchName} does not match configured PUSH_BRANCHES: ${appConfig.PUSH_BRANCHES}. Ignoring event.`
-			);
-			return;
-		}
+	const result = shouldProcessPush(branchName, defaultBranchName, appConfig, pullRequests);
+	if (!result.matched) {
+		log.debug(result.reason);
+		return;
 	}
 
-	let changedFiles: string[] = [];
-	const before = isBranchCreated ? defaultBranchName : payload.before; // For new branches, compare with the default branch
-	for await (const response of octokit.paginate.iterator(
-		octokit.rest.repos.compareCommitsWithBasehead,
-		{
-			...repo,
-			basehead: `${before}...${payload.after}`
-		}
-	)) {
-		const { data: comparison } = response;
-		changedFiles = changedFiles.concat(
-			// @ts-expect-error The types for the response are not correctly inferred
-			(comparison.files as DiffEntries)
-				?.filter((f) => f.status !== 'unchanged')
-				.map((f) => f.filename) ?? []
+	// Get target repository visibility before comparing commits (optimization: skip compare if guardrail blocks)
+	const targetRepoDetail = await octokit.rest.repos.get({ ...repo });
+	const targetVisibility = targetRepoDetail.data.visibility;
+	const isPrivateDispatchBlocked =
+		targetVisibility !== 'public' &&
+		targetVisibility !== undefined &&
+		!appConfig.RUNNER_REPOSITORY_DISABLE_GUARDRAIL &&
+		!appConfig.RUNNER_REPOSITORY_FOR_PRIVATE;
+	if (isPrivateDispatchBlocked) {
+		log.info(
+			'Target repository is private but no private runner is configured and guardrail is not disabled. Skipping workflow dispatch.'
 		);
+		return;
 	}
+
+	const before = isBranchCreated ? defaultBranchName : payload.before; // For new branches, compare with the default branch
+	const changedFiles = await getChangedFiles(octokit, repo, `${before}...${payload.after}`);
 
 	// Check if any of the changed files are related to devcontainer configuration
 	log.debug(`Checking ${changedFiles.length} changed files for devcontainer-related changes...`);
@@ -122,19 +168,6 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	}
 
 	// If devcontainer-related changes are detected, trigger the workflow dispatch event
-	const targetRepoDetail = await octokit.rest.repos.get({ ...repo });
-	const targetVisibility = targetRepoDetail.data.visibility;
-	if (
-		targetVisibility !== 'public' &&
-		targetVisibility !== undefined &&
-		!appConfig.RUNNER_REPOSITORY_DISABLE_GUARDRAIL &&
-		!appConfig.RUNNER_REPOSITORY_FOR_PRIVATE
-	) {
-		log.info(
-			`Target repository is private but no private runner is configured and guardrail is not disabled. Skipping workflow dispatch.`
-		);
-		return;
-	}
 	const resolvedRunnerRepo = appConfig.resolveRunnerRepository(targetVisibility);
 	const resolvedRunnerRefRaw = appConfig.CHECK_WORKFLOW_REF;
 	let runnerRef = resolvedRunnerRefRaw;

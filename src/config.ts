@@ -53,7 +53,7 @@ export const AppConfig = z
 	.transform((config) => {
 		return {
 			...config,
-			resolveRunnerRepository: (targetVisibility: string | boolean | undefined) => {
+			resolveRunnerRepository(targetVisibility: string | boolean | undefined) {
 				if (!targetVisibility || targetVisibility === 'public') {
 					const runnerPublic = config.RUNNER_REPOSITORY_FOR_PUBLIC;
 					if (runnerPublic) return runnerPublic;

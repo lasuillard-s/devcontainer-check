@@ -26,6 +26,8 @@ test('dispatches a workflow when devcontainer files are changed', async ({ probo
 		})
 		.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
 		.reply(200, [])
+		.get('/repos/devcontainer-check-org/devcontainer-check')
+		.reply(200, { default_branch: 'main', visibility: 'public' })
 		.get(
 			`/repos/devcontainer-check-org/devcontainer-check/compare/${payload.before}...${payload.after}`
 		)
@@ -36,8 +38,6 @@ test('dispatches a workflow when devcontainer files are changed', async ({ probo
 				{ filename: '.env.example', status: 'modified' }
 			]
 		})
-		.get('/repos/devcontainer-check-org/devcontainer-check')
-		.reply(200, { default_branch: 'main', visibility: 'public' })
 		.get('/repos/acme/devcontainer-check-runner')
 		.reply(200, { default_branch: 'main' })
 		.post(
@@ -101,6 +101,8 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 		})
 		.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
 		.reply(200, [])
+		.get('/repos/devcontainer-check-org/devcontainer-check')
+		.reply(200, { default_branch: 'main', visibility: 'public' })
 		.get(
 			`/repos/devcontainer-check-org/devcontainer-check/compare/${payload.before}...${payload.after}`
 		)
