@@ -29,6 +29,7 @@ describe('loadConfig', () => {
 			PUSH_BRANCHES: [DEFAULT_BRANCH_ALIAS],
 			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS]
 		});
+		expect(config.RUNNER_REPOSITORY_DISABLE_GUARDRAIL).toBeUndefined();
 		expect(config.resolveRunnerRepository('public')).toStrictEqual({
 			owner: 'acme',
 			repo: 'devcontainer-check-runner'
