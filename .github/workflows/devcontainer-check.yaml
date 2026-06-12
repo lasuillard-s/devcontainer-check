@@ -222,8 +222,6 @@ jobs:
         id: write-success-result
         if: |
           always()
-          && steps.resolve-config.outputs.using-devcontainer == 'true'
-          && steps.cached-result.outputs.reused != 'true'
           && steps.health-check.outcome == 'success'
         run: |
           mkdir --parents "$CHECK_RESULT_DIR"
@@ -247,8 +245,6 @@ jobs:
         id: write-failed-result
         if: |
           always()
-          && steps.resolve-config.outputs.using-devcontainer == 'true'
-          && steps.cached-result.outputs.reused != 'true'
           && steps.health-check.outcome == 'failure'
         run: |
           mkdir --parents "$CHECK_RESULT_DIR"
