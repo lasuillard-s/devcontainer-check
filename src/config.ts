@@ -13,6 +13,24 @@ export const AppConfig = z
 				message: 'RUNNER_REPOSITORY must be in the format "owner/repo"'
 			})
 			.transform(toRepoObject),
+		/** Full name (owner/repo) of the repository where the runner workflow is defined for public repositories. Falls back to RUNNER_REPOSITORY. */
+		RUNNER_REPOSITORY_FOR_PUBLIC: z
+			.string()
+			.refine(validateRepositoryFormat, {
+				message: 'RUNNER_REPOSITORY_FOR_PUBLIC must be in the format "owner/repo"'
+			})
+			.transform(toRepoObject)
+			.optional(),
+		/** Full name (owner/repo) of the repository where the runner workflow is defined for private repositories. Falls back to RUNNER_REPOSITORY. */
+		RUNNER_REPOSITORY_FOR_PRIVATE: z
+			.string()
+			.refine(validateRepositoryFormat, {
+				message: 'RUNNER_REPOSITORY_FOR_PRIVATE must be in the format "owner/repo"'
+			})
+			.transform(toRepoObject)
+			.optional(),
+		/** Set to true to allow dispatching to public runners for private repositories. */
+		RUNNER_REPOSITORY_DISABLE_GUARDRAIL: z.string().optional().transform(toBoolean),
 		/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
 		CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
 		/** Reference for the workflow dispatch event. Defaults to the default branch of the runner repository. */
@@ -34,8 +52,18 @@ export const AppConfig = z
 	})
 	.transform((config) => {
 		return {
-			...config
-			// ... any additional processing of the config values can be done here
+			...config,
+			resolveRunnerRepository(targetVisibility: string | boolean | undefined) {
+				if (!targetVisibility || targetVisibility === 'public') {
+					const runnerPublic = config.RUNNER_REPOSITORY_FOR_PUBLIC;
+					if (runnerPublic) return runnerPublic;
+				}
+				if (targetVisibility && targetVisibility !== 'public') {
+					const runnerPrivate = config.RUNNER_REPOSITORY_FOR_PRIVATE;
+					if (runnerPrivate) return runnerPrivate;
+				}
+				return config.RUNNER_REPOSITORY;
+			}
 		};
 	});
 export type AppConfig = z.infer<typeof AppConfig>;
@@ -72,6 +100,16 @@ function validateRepositoryFormat(value: string): boolean {
 function toRepoObject(repoString: string): { owner: string; repo: string } {
 	const [owner, repo] = repoString.split('/');
 	return { owner, repo };
+}
+
+/**
+ * Convert a string to a boolean.
+ * @param value String to convert
+ * @returns True if the string is a truthy value, false otherwise
+ */
+function toBoolean(value: string | undefined): boolean | undefined {
+	if (value === undefined) return undefined;
+	return value.trim().toLowerCase() === 'true';
 }
 
 /**
