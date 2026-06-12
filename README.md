@@ -75,7 +75,7 @@ Probot will create **.env** file in the repository with variables such as `APP_I
 ### 🖥️ Runner repository configuration
 
 > [!WARNING]
-> It is recommended to make the runner repository private. There's security risk of private repository content being exposed to the public (job logs) if runner repository is public.
+> It is recommended to make the runner repository private if you are running checks on private repositories. There's security risk of private repository content being exposed to the public (job logs) if runner repository is public.
 
 The **Runner Repository** is a repository where check jobs run. You can reuse this repository as a runner repository as well (but recommended to make it private).
 
@@ -90,10 +90,10 @@ Once the runner repository is ready, go to **Settings** > **Security and Quality
 
 Add below variables as **Repository secrets**:
 
-- **APP_ID**: GitHub App ID
-- **PRIVATE_KEY** GitHub App private key
+- **DEVCONTAINER_CHECK_APP_ID** (defaults to **APP_ID** if not set): GitHub App ID
+- **DEVCONTAINER_CHECK_PRIVATE_KEY** (defaults to **PRIVATE_KEY** if not set): GitHub App private key
 
-This is required for runner repository to checkout the repository in the check workflow.
+This is required for runner repository to checkout the repository in the check workflow. But note, it is not necessarily to be the same as the Dev Container Check app; it can be a separate GitHub App.
 
 ### 👂 Deploy Webhook Handler (app)
 
