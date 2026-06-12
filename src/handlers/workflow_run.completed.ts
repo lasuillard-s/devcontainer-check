@@ -1,9 +1,62 @@
 import path from 'node:path';
+import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
-import { AppConfig } from '../config.js';
 import { downloadArtifactFileJSON } from '../octokit.js';
+import { AppConfig } from '../config.js';
 import { COMMIT_STATUS_CONTEXT } from './common.js';
 import type { WorkflowInputs } from './types.js';
+
+/**
+ * Checks if the current repository matches one of the configured runner repositories.
+ * @param repo Repository info with owner and repo name
+ * @param repo.owner Repository owner
+ * @param repo.repo Repository name
+ * @param appConfig Application configuration
+ * @returns true if the repo matches a configured runner repository
+ */
+function isMatchingRunner(repo: { owner: string; repo: string }, appConfig: AppConfig): boolean {
+	const runnerRepositories = [appConfig.RUNNER_REPOSITORY];
+	if (appConfig.RUNNER_REPOSITORY_FOR_PUBLIC) {
+		runnerRepositories.push(appConfig.RUNNER_REPOSITORY_FOR_PUBLIC);
+	}
+	if (appConfig.RUNNER_REPOSITORY_FOR_PRIVATE) {
+		runnerRepositories.push(appConfig.RUNNER_REPOSITORY_FOR_PRIVATE);
+	}
+	return runnerRepositories.some(
+		(runnerRepo) => runnerRepo.owner === repo.owner && runnerRepo.repo === repo.repo
+	);
+}
+
+/**
+ * Fetches and parses workflow inputs from a GitHub Actions artifact.
+ * @param octokit Octokit instance
+ * @param repo Repository info with owner and repo name
+ * @param repo.owner Repository owner
+ * @param repo.repo Repository name
+ * @param workflowRunId ID of the workflow run
+ * @param appConfig Application configuration
+ * @param log Logger instance for error logging
+ * @param log.error Error logging function
+ * @returns The parsed workflow inputs, or null if retrieval failed
+ */
+async function fetchInputs(
+	octokit: ProbotOctokit,
+	repo: { owner: string; repo: string },
+	workflowRunId: number,
+	appConfig: AppConfig,
+	log: { error: (msg: string) => void }
+): Promise<WorkflowInputs | null> {
+	const inputs = await downloadArtifactFileJSON<WorkflowInputs>(octokit, {
+		...repo,
+		workflowRunId,
+		artifactName: appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME,
+		filePath: appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH
+	});
+	if (!inputs) {
+		log.error('Failed to retrieve workflow inputs.');
+	}
+	return inputs;
+}
 
 /**
  * Handler for workflow run completed events on the runner repository.
@@ -22,16 +75,15 @@ export default async function handler(
 	);
 
 	// Only listen to workflow run completion events of the runner repository
-	if (
-		repo.owner !== appConfig.RUNNER_REPOSITORY.owner ||
-		repo.repo !== appConfig.RUNNER_REPOSITORY.repo ||
-		// ? Match the workflow by file name instead of ID to allow users to customize the workflow file name
+	const isMatchingRunnerRepository = isMatchingRunner(repo, appConfig);
+	// We check the filename (e.g., devcontainer-check.yaml) rather than a hardcoded ID for flexibility.
+	const isTargetWorkflow =
 		path.basename(
-			// * Workflow path could be null in some cases, but not clear under which circumstances.
-			// * For now, we will treat null as non-matching workflow to avoid potential issues.
+			// Workflow path could be null in some cases, but not clear under which circumstances.
+			// For now, we will treat null as non-matching workflow to avoid potential issues.
 			payload.workflow?.path ?? ''
-		) !== appConfig.CHECK_WORKFLOW_NAME
-	) {
+		) === appConfig.CHECK_WORKFLOW_NAME;
+	if (!isMatchingRunnerRepository || !isTargetWorkflow) {
 		log.debug(
 			`Workflow run completed for ${payload.repository.full_name}, which does not match the configured runner repository. Ignoring event.`
 		);
@@ -39,14 +91,8 @@ export default async function handler(
 	}
 
 	// Find artifact that contains the workflow inputs to determine which repository and ref this workflow run is associated with
-	const inputs = await downloadArtifactFileJSON<WorkflowInputs>(octokit, {
-		...appConfig.RUNNER_REPOSITORY,
-		workflowRunId: payload.workflow_run.id,
-		artifactName: appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME,
-		filePath: appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH
-	});
+	const inputs = await fetchInputs(octokit, repo, payload.workflow_run.id, appConfig, log);
 	if (!inputs) {
-		log.error('Failed to retrieve workflow inputs.');
 		return;
 	}
 	log.info(`Workflow run completed. Retrieved workflow inputs: ${JSON.stringify(inputs)}`);
