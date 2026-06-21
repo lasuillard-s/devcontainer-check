@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   check:
-    name: check
+    name: Check
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:

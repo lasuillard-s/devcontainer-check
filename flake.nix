@@ -23,13 +23,14 @@
       {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            git
-            gnumake
             pre-commit
+            just
             nodejs_24
             ngrok
           ];
-          shellHook = '''';
+          shellHook = ''
+            pre-commit install
+          '';
         };
       }
     );

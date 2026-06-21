@@ -3,6 +3,12 @@
 	"version": "0.1.0",
 	"private": true,
 	"description": "A GitHub App to automate validating your repository dev container configuration.",
+	"keywords": [
+		"probot",
+		"github",
+		"probot-app"
+	],
+	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lasuillard-s/devcontainer-check.git"
@@ -13,17 +19,15 @@
 		"email": "lasuillard@gmail.com"
 	},
 	"homepage": "https://github.com/lasuillard-s/devcontainer-check",
-	"keywords": [
-		"probot",
-		"github",
-		"probot-app"
-	],
+	"bugs": {
+		"url": "https://github.com/lasuillard-s/devcontainer-check/issues"
+	},
 	"scripts": {
 		"dev": "probot run ./dist/src/app.js",
 		"dev:watch": "nodemon --watch ./src --ext js,ts --exec 'npm run build; npm run dev'",
 		"build": "tsc",
 		"build:watch": "tsc --watch",
-		"fmt": "prettier --write .",
+		"fmt": "prettier --write --list-different .",
 		"fmt:check": "prettier --check .",
 		"lint": "eslint .",
 		"lint:fix": "eslint --fix .",
@@ -31,12 +35,24 @@
 		"test": "vitest --run",
 		"test:watch": "vitest --silent --watch"
 	},
-	"packageManager": "npm@11.17.0",
+	"type": "module",
 	"dependencies": {
 		"adm-zip": "^0.5.17",
 		"minimatch": "^10.2.5",
 		"probot": "^14.0.0",
 		"zod": "^4.3.6"
+	},
+	"devEngines": {
+		"runtime": {
+			"name": "node",
+			"version": ">=24",
+			"onFail": "error"
+		},
+		"packageManager": {
+			"name": "npm",
+			"version": ">=11",
+			"onFail": "error"
+		}
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "3.3.5",
@@ -59,6 +75,5 @@
 	},
 	"overrides": {
 		"@types/pg": "8.20.0"
-	},
-	"type": "module"
+	}
 }
