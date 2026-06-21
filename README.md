@@ -3,13 +3,46 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/lasuillard-s/devcontainer-check/graph/badge.svg?token=7k6RoJEdWj)](https://codecov.io/gh/lasuillard-s/devcontainer-check)
 
-A GitHub App to automate validating your repositories' dev container configuration.
+A GitHub App that automates validation of your repository's Dev Container.
 
 ![Demo](docs/demo.png)
 
+## ✨ Features
+
+devcontainer-check is a TypeScript-based Probot app with these features:
+
+- **Detect dev container changes** in `.devcontainer/` and `.devcontainer.example/`
+- **Offload validation workflows** to a separate runner repository when dev container files change
+- **Update commit statuses** on the target repository when the runner workflow completes
+- **Support visibility-specific runners** for public and private repositories
+
+## 🚀 How to use
+
+### ⌨️ Running locally
+
+```bash
+npm install
+npm run build
+npm run dev
+```
+
+Then open `http://localhost:3000` to register and run the app with Probot's local helper.
+
+If you want to receive GitHub webhooks locally, set `WEBHOOK_PROXY_URL` in your `.env` file to a tunnel URL. The template in [`.env.example`](./.env.example) shows the required GitHub App and app-specific variables.
+
+### 👂 Deploying the webhook handler
+
+This app is configured for Vercel through [`vercel.ts`](./vercel.ts).
+
+- Use [`app.yaml`](./app.yaml) or Probot's app registration flow to install the GitHub App.
+- Set the GitHub App secrets and `RUNNER_REPOSITORY` in your deployment environment.
+- Make sure the app is installed on the target repositories and on whichever runner repository or repositories you use.
+
+The build uses `npm run build` and outputs to `dist/`.
+
 ## ❔ How it works
 
-Below is a sequence diagram describing how this app works:
+This app watches target repositories for `push` events and runner repositories for `workflow_run.completed` events.
 
 ```mermaid
 sequenceDiagram
@@ -17,111 +50,55 @@ sequenceDiagram
 	participant server as Webhook Handler
 	participant runner as Runner Repository
 
-  target ->> server: Event (push)
-  server ->> server: Check if dev container configuration changed
-  server ->> runner: Trigger workflow (workflow_dispatch)
-  server ->> target: Update commit statuses (pending)
-  runner ->> target: Checkout repository
-  runner ->> runner: Check dev container configuration
-  runner ->> server: Event (workflow_run.completed)
-  server ->> target: Update commit statuses (success or failure)
+	target ->> server: Event (push)
+	server ->> server: Check branch filters and changed files
+	server ->> runner: Trigger workflow (workflow_dispatch)
+	server ->> target: Update commit statuses (pending)
+	runner ->> target: Checkout repository
+	runner ->> runner: Check dev container configuration
+	runner ->> server: Event (workflow_run.completed)
+	server ->> target: Update commit statuses (success or failure)
 ```
 
-- **Why run tasks in GitHub Actions?**
+- The app only processes push events on branches that match `PUSH_BRANCHES`, or push events whose commits are associated with pull requests whose base branch matches `PR_BRANCHES`.
+- When `.devcontainer/` or `.devcontainer.example/` changes, the app dispatches the configured runner workflow and marks the commit as pending.
+- When no dev container files change, the app marks the commit as successful without dispatching a workflow.
+- Runner selection can vary by repository visibility through `RUNNER_REPOSITORY_FOR_PUBLIC`, `RUNNER_REPOSITORY_FOR_PRIVATE`, and `RUNNER_REPOSITORY_DISABLE_GUARDRAIL`.
 
-  To validate, build and test containers we need Docker which is not available in serverless runtimes. Instead of setting it up on our own, we reuse GitHub Actions for it.
+## 📏 Configuration
 
-- **Why should I self-host this app?**
+The most important environment variables are below. See [`.env.example`](./.env.example) and [`src/config.ts`](./src/config.ts) for the full list and defaults.
 
-  Because we have no infrastructure to run the tasks for you, this app uses your GitHub Actions infra. You self-host this app and it will work on your GitHub Actions infra and consume the CI minutes of yours.
+| Key                                   | Description                                                                                                      |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `APP_ID`                              | GitHub App ID.                                                                                                   |
+| `PRIVATE_KEY`                         | GitHub App private key.                                                                                          |
+| `GITHUB_CLIENT_ID`                    | GitHub App client ID.                                                                                            |
+| `GITHUB_CLIENT_SECRET`                | GitHub App client secret.                                                                                        |
+| `WEBHOOK_SECRET`                      | GitHub webhook secret.                                                                                           |
+| `WEBHOOK_PROXY_URL`                   | Optional local webhook proxy URL.                                                                                |
+| `RUNNER_REPOSITORY`                   | Required runner repository in `owner/repo` format.                                                               |
+| `RUNNER_REPOSITORY_FOR_PUBLIC`        | Optional runner repository used for public target repositories.                                                  |
+| `RUNNER_REPOSITORY_FOR_PRIVATE`       | Optional runner repository used for private target repositories.                                                 |
+| `RUNNER_REPOSITORY_DISABLE_GUARDRAIL` | Set to `true` to allow dispatching private targets without a private runner repository.                          |
+| `CHECK_WORKFLOW_NAME`                 | Workflow file name to dispatch. Defaults to `devcontainer-check.yaml`.                                           |
+| `CHECK_WORKFLOW_REF`                  | Workflow ref to dispatch. Defaults to `~DEFAULT_BRANCH`, which resolves to the runner repository default branch. |
+| `CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME` | Workflow inputs artifact name. Defaults to `workflow-inputs`.                                                    |
+| `CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH` | Workflow inputs file path inside the artifact. Defaults to `inputs.json`.                                        |
+| `PUSH_BRANCHES`                       | Comma-separated push branch patterns. Defaults to `~DEFAULT_BRANCH`.                                             |
+| `PR_BRANCHES`                         | Comma-separated pull request base branch patterns. Defaults to `~DEFAULT_BRANCH`.                                |
 
-## ⚙️ Hosting the application
+## ⚠️ Limitations
 
-### 🤖 Create GitHub application
+- The app only checks file changes under `.devcontainer/` and `.devcontainer.example/`.
+- Pushes on branches outside `PUSH_BRANCHES` are ignored unless they are associated with a pull request whose base branch matches `PR_BRANCHES`.
+- Private target repositories need a private runner repository, unless `RUNNER_REPOSITORY_DISABLE_GUARDRAIL` is enabled.
+- The runner workflow must upload the configured inputs artifact so the completion handler can map results back to the original commit.
 
-Here we describe creating GitHub App with [Probot GitHub App Manifest Flow](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest#using-probot-to-implement-the-github-app-manifest-flow). If you know what it is and prefer creating app manually, check the [app.yaml](app.yaml) file for required permissions and events to listen to.
+## 💖 Contributing
 
-> [!IMPORTANT]
-> The app should have permission to access the runner repository as well to receive workflow run completion events.
+Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for more information about contributing to this project.
 
-> [!NOTE]
-> Use [public/logo.png](public/logo.png) file to decorate your app if you want.
+## 📜 License
 
-To get help of Probot, you should have Node.js and npm installed on your system. (or you can use Dev Container instead, which contains all the necessary dependencies by default.)
-
-```bash
-# Fork or clone this repository
-$ git clone https://github.com/lasuillard-s/devcontainer-check.git
-
-# Move to the project directory
-$ cd devcontainer-check
-
-# Install the dependencies
-$ npm install
-
-# Build the application
-$ npm run build
-
-# Run the development server
-$ npm run dev
-```
-
-Then visit http://localhost:3000 to create a GitHub App with Probot's app registration helper.
-
-![Probot Landing](docs/probot-landing.png)
-
-Probot will create **.env** file in the repository with variables such as `APP_ID`, `PRIVATE_KEY`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, etc. You will need it soon.
-
-### 🖥️ Runner repository configuration
-
-> [!WARNING]
-> It is recommended to make the runner repository private if you are running checks on private repositories. There's security risk of private repository content being exposed to the public (job logs) if runner repository is public.
-
-The **Runner Repository** is a repository where check jobs run. You can reuse this repository as a runner repository as well (but recommended to make it private).
-
-If you want to separate the runner repository, create a new repository and copy & paste [.github/workflows/devcontainer-check.yaml](.github/workflows/devcontainer-check.yaml) file in the created repository. Just don't forget to **ensure the app is installed to the runner repository** as well.
-
-> [!NOTE]
-> You can use [vendir](https://github.com/carvel-dev/vendir) with [Renovate](https://github.com/renovatebot/renovate) to sync workflow files automatically.
-
-Once the runner repository is ready, go to **Settings** > **Security and Quality** > **Secrets and variables** > **Actions**
-
-![Repository Secrets and Variables](docs/runner-variables.png)
-
-Add below variables as **Repository secrets**:
-
-- **DEVCONTAINER_CHECK_APP_ID** (defaults to **APP_ID** if not set): GitHub App ID
-- **DEVCONTAINER_CHECK_PRIVATE_KEY** (defaults to **PRIVATE_KEY** if not set): GitHub App private key
-
-This is required for runner repository to checkout the repository in the check workflow. But note, it is not necessarily to be the same as the Dev Container Check app; it can be a separate GitHub App.
-
-### 👂 Deploy Webhook Handler (app)
-
-You can deploy the webhook handler (app) to Vercel with deploy button:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flasuillard-s%2Fdevcontainer-check&env=NODEJS_HELPERS,APP_ID,PRIVATE_KEY,GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,WEBHOOK_SECRET,RUNNER_REPOSITORY&envDefaults=%7B%22NODEJS_HELPERS%22%3A%220%22%7D&project-name=devcontainer-check&repository-name=devcontainer-check)
-
-Description of environment variables used:
-
-| Name                                                               | Value                |
-| ------------------------------------------------------------------ | -------------------- |
-| [NODEJS_HELPERS](https://probot.github.io/docs/deployment/#vercel) | 0                    |
-| APP_ID                                                             | From your GitHub App |
-| PRIVATE_KEY                                                        | 〃                   |
-| GITHUB_CLIENT_ID                                                   | 〃                   |
-| GITHUB_CLIENT_SECRET                                               | 〃                   |
-| WEBHOOK_SECRET                                                     | 〃                   |
-
-And app configuration variables (check [src/config.ts](src/config.ts) file for full reference):
-
-| Name                                | Description                                                                                                                                           |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RUNNER_REPOSITORY                   | **Required**. Full name (owner/repo) of the repository where the runner workflow is defined.                                                          |
-| CHECK_WORKFLOW_NAME                 | ID of the workflow to be triggered. Defaults to `'devcontainer-check.yaml'`.                                                                          |
-| CHECK_WORKFLOW_REF                  | Reference for the workflow dispatch event. Defaults to the default branch of the runner repository.                                                   |
-| CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME | Name of the artifact containing the workflow inputs. Defaults to `'workflow-inputs'`.                                                                 |
-| CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH | Path to the inputs file within the artifact. Defaults to `'inputs.json'`.                                                                             |
-| PUSH_BRANCHES                       | Comma-separated list of branch names (supports glob patterns) that check runs on. Defaults to the repository default branch.                          |
-| PR_BRANCHES                         | Comma-separated list of target branch names (supports glob patterns) that check runs on for pull requests. Defaults to the repository default branch. |
-
-Once deployed, go to GitHub App settings page you created then update the webhook URL to your Vercel app (e.g. `https://<project-name>.vercel.app/api/github/webhooks`).
+This project is licensed under the MIT License.
