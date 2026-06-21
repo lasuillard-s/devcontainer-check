@@ -16,30 +16,6 @@ devcontainer-check is a TypeScript-based Probot app with these features:
 - **Update commit statuses** on the target repository when the runner workflow completes
 - **Support visibility-specific runners** for public and private repositories
 
-## 🚀 How to use
-
-### ⌨️ Running locally
-
-```bash
-npm install
-npm run build
-npm run dev
-```
-
-Then open `http://localhost:3000` to register and run the app with Probot's local helper.
-
-If you want to receive GitHub webhooks locally, set `WEBHOOK_PROXY_URL` in your `.env` file to a tunnel URL. The template in [`.env.example`](./.env.example) shows the required GitHub App and app-specific variables.
-
-### 👂 Deploying the webhook handler
-
-This app is configured for Vercel through [`vercel.ts`](./vercel.ts).
-
-- Use [`app.yaml`](./app.yaml) or Probot's app registration flow to install the GitHub App.
-- Set the GitHub App secrets and `RUNNER_REPOSITORY` in your deployment environment.
-- Make sure the app is installed on the target repositories and on whichever runner repository or repositories you use.
-
-The build uses `npm run build` and outputs to `dist/`.
-
 ## ❔ How it works
 
 This app watches target repositories for `push` events and runner repositories for `workflow_run.completed` events.
@@ -64,6 +40,28 @@ sequenceDiagram
 - When `.devcontainer/` or `.devcontainer.example/` changes, the app dispatches the configured runner workflow and marks the commit as pending.
 - When no dev container files change, the app marks the commit as successful without dispatching a workflow.
 - Runner selection can vary by repository visibility through `RUNNER_REPOSITORY_FOR_PUBLIC`, `RUNNER_REPOSITORY_FOR_PRIVATE`, and `RUNNER_REPOSITORY_DISABLE_GUARDRAIL`.
+
+## ⌨️ Registering the GitHub App
+
+To register the GitHub App, clone the repository and run the following commands in a terminal:
+
+```bash
+npm install
+npm run build
+npm run dev
+```
+
+Then open `http://localhost:3000` to register and run the app with Probot's local helper.
+
+## 👂 Deploying the webhook handler
+
+This app is configured for Vercel through [`vercel.ts`](./vercel.ts).
+
+- Use [`app.yaml`](./app.yaml) or Probot's app registration flow to install the GitHub App.
+- Set the GitHub App secrets and `RUNNER_REPOSITORY` in your deployment environment.
+- Make sure the app is installed on the target repositories and on whichever runner repository or repositories you use.
+
+The build uses `npm run build` and outputs to `dist/`.
 
 ## 📏 Configuration
 
