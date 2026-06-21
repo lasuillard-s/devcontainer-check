@@ -1,9 +1,8 @@
+fail_fast: true
 exclude: |
   (?x)(
     \.snap$
   )
-default_stages: [pre-commit]
-fail_fast: true
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
