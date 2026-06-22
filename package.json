@@ -59,10 +59,10 @@
 		"@eslint/js": "10.0.1",
 		"@types/adm-zip": "0.5.8",
 		"@types/node": "24.13.2",
-		"@vercel/config": "0.5.2",
-		"@vitest/coverage-v8": "4.1.8",
+		"@vercel/config": "0.5.3",
+		"@vitest/coverage-v8": "4.1.9",
 		"eslint-config-prettier": "10.1.8",
-		"eslint-plugin-jsdoc": "63.0.2",
+		"eslint-plugin-jsdoc": "63.0.6",
 		"globals": "17.6.0",
 		"ioredis": "5.11.1",
 		"nock": "14.0.15",
@@ -70,8 +70,8 @@
 		"prettier": "3.8.4",
 		"smee-client": "5.0.0",
 		"typescript": "6.0.3",
-		"typescript-eslint": "8.61.0",
-		"vitest": "4.1.8"
+		"typescript-eslint": "8.61.1",
+		"vitest": "4.1.9"
 	},
 	"overrides": {
 		"@types/pg": "8.20.0"
