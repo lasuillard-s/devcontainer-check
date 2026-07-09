@@ -56,18 +56,19 @@ test('dispatches a workflow when devcontainer files are changed', async ({ probo
 			}
 		)
 		.reply(201, { html_url: workflowRunUrl })
-		.post(
-			`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-			(body: unknown) => {
-				expect(body).toStrictEqual({
-					state: 'pending',
-					context: 'Dev Container Check',
-					description: 'Checking for dev container configuration...',
-					target_url: workflowRunUrl
-				});
-				return true;
-			}
-		)
+		.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+			expect(body).toStrictEqual({
+				head_sha: payload.after,
+				name: 'Dev Container Check',
+				status: 'in_progress',
+				details_url: workflowRunUrl,
+				output: {
+					title: 'Checking for dev container configuration...',
+					summary: 'Check is in progress. This might take a few minutes.'
+				}
+			});
+			return true;
+		})
 		.reply(201);
 
 	// Act
@@ -109,17 +110,25 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 		.reply(200, {
 			files: [{ filename: 'package.json', status: 'modified' }]
 		})
-		.post(
-			`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-			(body: unknown) => {
-				expect(body).toStrictEqual({
-					state: 'success',
-					context: 'Dev Container Check',
-					description: 'Dev container configuration did not change.'
-				});
-				return true;
-			}
-		)
+		.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+			expect(body).toStrictEqual({
+				head_sha: payload.after,
+				name: 'Dev Container Check',
+				status: 'completed',
+				conclusion: 'success',
+				output: {
+					title: 'Dev container configuration did not change.',
+					summary: `
+There were 1 changed files, but none of them were related to devcontainer configuration.
+
+Changed files:
+
+- package.json
+`
+				}
+			});
+			return true;
+		})
 		.reply(201);
 
 	// Act
@@ -160,18 +169,19 @@ test('on new branch creations, compare commits with default branch', async ({ pr
 			'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches'
 		)
 		.reply(201, { html_url: workflowRunUrl })
-		.post(
-			`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-			(body: unknown) => {
-				expect(body).toStrictEqual({
-					state: 'pending',
-					context: 'Dev Container Check',
-					description: 'Checking for dev container configuration...',
-					target_url: workflowRunUrl
-				});
-				return true;
-			}
-		)
+		.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+			expect(body).toStrictEqual({
+				head_sha: payload.after,
+				name: 'Dev Container Check',
+				status: 'in_progress',
+				details_url: workflowRunUrl,
+				output: {
+					title: 'Checking for dev container configuration...',
+					summary: 'Check is in progress. This might take a few minutes.'
+				}
+			});
+			return true;
+		})
 		.reply(201);
 
 	// Act
@@ -264,18 +274,19 @@ describe('when push has associated pull requests', () => {
 				}
 			)
 			.reply(201, { html_url: workflowRunUrl })
-			.post(
-				`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-				(body: unknown) => {
-					expect(body).toStrictEqual({
-						state: 'pending',
-						context: 'Dev Container Check',
-						description: 'Checking for dev container configuration...',
-						target_url: workflowRunUrl
-					});
-					return true;
-				}
-			)
+			.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+				expect(body).toStrictEqual({
+					head_sha: payload.after,
+					name: 'Dev Container Check',
+					status: 'in_progress',
+					details_url: workflowRunUrl,
+					output: {
+						title: 'Checking for dev container configuration...',
+						summary: 'Check is in progress. This might take a few minutes.'
+					}
+				});
+				return true;
+			})
 			.reply(201);
 
 		// Act
@@ -365,18 +376,19 @@ describe('private repository guardrail behavior', () => {
 				.reply(200, { default_branch: 'main' })
 				.post('/repos/acme/public-runner/actions/workflows/devcontainer-check.yaml/dispatches')
 				.reply(201, { html_url: workflowRunUrl })
-				.post(
-					`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-					(body: unknown) => {
-						expect(body).toStrictEqual({
-							state: 'pending',
-							context: 'Dev Container Check',
-							description: 'Checking for dev container configuration...',
-							target_url: workflowRunUrl
-						});
-						return true;
-					}
-				)
+				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+					expect(body).toStrictEqual({
+						head_sha: payload.after,
+						name: 'Dev Container Check',
+						status: 'in_progress',
+						details_url: workflowRunUrl,
+						output: {
+							title: 'Checking for dev container configuration...',
+							summary: 'Check is in progress. This might take a few minutes.'
+						}
+					});
+					return true;
+				})
 				.reply(201);
 
 			// Act
@@ -432,18 +444,19 @@ describe('private repository guardrail behavior', () => {
 					.reply(200, { default_branch: 'main' })
 					.post('/repos/acme/public-runner/actions/workflows/devcontainer-check.yaml/dispatches')
 					.reply(201, { html_url: workflowRunUrl })
-					.post(
-						`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-						(body: unknown) => {
-							expect(body).toStrictEqual({
-								state: 'pending',
-								context: 'Dev Container Check',
-								description: 'Checking for dev container configuration...',
-								target_url: workflowRunUrl
-							});
-							return true;
-						}
-					)
+					.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+						expect(body).toStrictEqual({
+							head_sha: payload.after,
+							name: 'Dev Container Check',
+							status: 'in_progress',
+							details_url: workflowRunUrl,
+							output: {
+								title: 'Checking for dev container configuration...',
+								summary: 'Check is in progress. This might take a few minutes.'
+							}
+						});
+						return true;
+					})
 					.reply(201);
 
 				// Act
@@ -484,18 +497,19 @@ describe('private repository guardrail behavior', () => {
 				.reply(200, { default_branch: 'main' })
 				.post('/repos/acme/private-runner/actions/workflows/devcontainer-check.yaml/dispatches')
 				.reply(201, { html_url: workflowRunUrl })
-				.post(
-					`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-					(body: unknown) => {
-						expect(body).toStrictEqual({
-							state: 'pending',
-							context: 'Dev Container Check',
-							description: 'Checking for dev container configuration...',
-							target_url: workflowRunUrl
-						});
-						return true;
-					}
-				)
+				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+					expect(body).toStrictEqual({
+						head_sha: payload.after,
+						name: 'Dev Container Check',
+						status: 'in_progress',
+						details_url: workflowRunUrl,
+						output: {
+							title: 'Checking for dev container configuration...',
+							summary: 'Check is in progress. This might take a few minutes.'
+						}
+					});
+					return true;
+				})
 				.reply(201);
 
 			// Act
@@ -527,18 +541,19 @@ describe('private repository guardrail behavior', () => {
 				.reply(200, { default_branch: 'main' })
 				.post('/repos/acme/default-runner/actions/workflows/devcontainer-check.yaml/dispatches')
 				.reply(201, { html_url: workflowRunUrl })
-				.post(
-					`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-					(body: unknown) => {
-						expect(body).toStrictEqual({
-							state: 'pending',
-							context: 'Dev Container Check',
-							description: 'Checking for dev container configuration...',
-							target_url: workflowRunUrl
-						});
-						return true;
-					}
-				)
+				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+					expect(body).toStrictEqual({
+						head_sha: payload.after,
+						name: 'Dev Container Check',
+						status: 'in_progress',
+						details_url: workflowRunUrl,
+						output: {
+							title: 'Checking for dev container configuration...',
+							summary: 'Check is in progress. This might take a few minutes.'
+						}
+					});
+					return true;
+				})
 				.reply(201);
 
 			// Act
@@ -579,18 +594,19 @@ describe('private repository guardrail behavior', () => {
 				.reply(200, { default_branch: 'main' })
 				.post('/repos/acme/public-runner/actions/workflows/devcontainer-check.yaml/dispatches')
 				.reply(201, { html_url: workflowRunUrl })
-				.post(
-					`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-					(body: unknown) => {
-						expect(body).toStrictEqual({
-							state: 'pending',
-							context: 'Dev Container Check',
-							description: 'Checking for dev container configuration...',
-							target_url: workflowRunUrl
-						});
-						return true;
-					}
-				)
+				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+					expect(body).toStrictEqual({
+						head_sha: payload.after,
+						name: 'Dev Container Check',
+						status: 'in_progress',
+						details_url: workflowRunUrl,
+						output: {
+							title: 'Checking for dev container configuration...',
+							summary: 'Check is in progress. This might take a few minutes.'
+						}
+					});
+					return true;
+				})
 				.reply(201);
 
 			// Act
@@ -622,18 +638,19 @@ describe('private repository guardrail behavior', () => {
 				.reply(200, { default_branch: 'main' })
 				.post('/repos/acme/private-runner/actions/workflows/devcontainer-check.yaml/dispatches')
 				.reply(201, { html_url: workflowRunUrl })
-				.post(
-					`/repos/devcontainer-check-org/devcontainer-check/statuses/${payload.after}`,
-					(body: unknown) => {
-						expect(body).toStrictEqual({
-							state: 'pending',
-							context: 'Dev Container Check',
-							description: 'Checking for dev container configuration...',
-							target_url: workflowRunUrl
-						});
-						return true;
-					}
-				)
+				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+					expect(body).toStrictEqual({
+						head_sha: payload.after,
+						name: 'Dev Container Check',
+						status: 'in_progress',
+						details_url: workflowRunUrl,
+						output: {
+							title: 'Checking for dev container configuration...',
+							summary: 'Check is in progress. This might take a few minutes.'
+						}
+					});
+					return true;
+				})
 				.reply(201);
 
 			// Act

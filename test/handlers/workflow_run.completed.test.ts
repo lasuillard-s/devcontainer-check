@@ -48,12 +48,17 @@ describe('when runner repository matches', () => {
 			.reply(200, { total_count: 1, artifacts: [{ id: 42, name: 'workflow-inputs' }] })
 			.get(`/repos/${owner}/${repo}/actions/artifacts/42/zip`)
 			.reply(200, zipBuffer, { 'Content-Type': 'application/zip' })
-			.post('/repos/target-org/target-repo/statuses/abc1234', (body: unknown) => {
+			.post('/repos/target-org/target-repo/check-runs', (body: unknown) => {
 				expect(body).toStrictEqual({
-					state: 'success',
-					context: 'Dev Container Check',
-					description: 'Dev container configuration is valid.',
-					target_url: payload.workflow_run.html_url
+					head_sha: 'abc1234',
+					name: 'Dev Container Check',
+					status: 'completed',
+					conclusion: 'success',
+					details_url: payload.workflow_run.html_url,
+					output: {
+						title: 'Dev container configuration is valid.',
+						summary: 'Check the workflow run details for more information.'
+					}
 				});
 				return true;
 			})
@@ -85,12 +90,17 @@ describe('when runner repository matches', () => {
 			.reply(200, { total_count: 1, artifacts: [{ id: 42, name: 'workflow-inputs' }] })
 			.get(`/repos/${owner}/${repo}/actions/artifacts/42/zip`)
 			.reply(200, zipBuffer, { 'Content-Type': 'application/zip' })
-			.post('/repos/target-org/target-repo/statuses/abc1234', (body: unknown) => {
+			.post('/repos/target-org/target-repo/check-runs', (body: unknown) => {
 				expect(body).toStrictEqual({
-					state: 'failure',
-					context: 'Dev Container Check',
-					description: 'Dev container configuration check failed.',
-					target_url: failedPayload.workflow_run.html_url
+					head_sha: 'abc1234',
+					name: 'Dev Container Check',
+					status: 'completed',
+					conclusion: 'failure',
+					details_url: failedPayload.workflow_run.html_url,
+					output: {
+						title: 'Dev container configuration check failed.',
+						summary: 'Check the workflow run details for more information.'
+					}
 				});
 				return true;
 			})

@@ -1,8 +1,8 @@
 import path from 'node:path';
 import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
-import { downloadArtifactFileJSON } from '../octokit.js';
 import { AppConfig } from '../config.js';
+import { downloadArtifactFileJSON } from '../octokit.js';
 import { COMMIT_STATUS_CONTEXT } from './common.js';
 import type { WorkflowInputs } from './types.js';
 
@@ -100,16 +100,20 @@ export default async function handler(
 	// Update the commit status based on the workflow run conclusion
 	const targetRepo = { owner: inputs.owner, repo: inputs.repo };
 	const state = payload.workflow_run.conclusion === 'success' ? 'success' : 'failure';
-	await octokit.rest.repos.createCommitStatus({
+	await octokit.rest.checks.create({
 		...targetRepo,
-		sha: inputs.sha,
-		state,
-		context: COMMIT_STATUS_CONTEXT,
-		description:
-			state === 'success'
-				? 'Dev container configuration is valid.'
-				: 'Dev container configuration check failed.',
-		target_url: payload.workflow_run.html_url
+		head_sha: inputs.sha,
+		name: COMMIT_STATUS_CONTEXT,
+		status: 'completed',
+		conclusion: state,
+		details_url: payload.workflow_run.html_url,
+		output: {
+			title:
+				state === 'success'
+					? 'Dev container configuration is valid.'
+					: 'Dev container configuration check failed.',
+			summary: 'Check the workflow run details for more information.'
+		}
 	});
 	log.info(
 		`Commit status updated based on workflow run conclusion: ${payload.workflow_run.conclusion}`
