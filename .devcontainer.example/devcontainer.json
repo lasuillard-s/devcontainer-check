@@ -9,10 +9,10 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"dbaeumer.vscode-eslint",
-				"esbenp.prettier-vscode",
 				"vitest.explorer",
-				"editorconfig.editorconfig"
+				"editorconfig.editorconfig",
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode"
 			]
 		}
 	}
