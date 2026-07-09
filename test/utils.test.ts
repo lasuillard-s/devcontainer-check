@@ -22,7 +22,7 @@ describe('matchPatterns', () => {
 
 	test('resolves aliases before matching', () => {
 		const aliases = { '~DEFAULT_BRANCH': 'main' };
-		expect(matchPatterns('~DEFAULT_BRANCH', ['main'], aliases)).toBe(true);
-		expect(matchPatterns('~DEFAULT_BRANCH', ['develop'], aliases)).toBe(false);
+		expect(matchPatterns('main', ['~DEFAULT_BRANCH'], aliases)).toBe(true);
+		expect(matchPatterns('develop', ['~DEFAULT_BRANCH'], aliases)).toBe(false);
 	});
 });

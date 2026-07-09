@@ -25,8 +25,8 @@ export function matchPatterns(
 	aliases: Record<string, string>
 ): boolean {
 	for (const pattern of patterns) {
-		const resolvedValue = aliases[value] ?? value;
-		if (minimatch(resolvedValue, pattern)) {
+		const resolvedPattern = aliases[pattern] ?? pattern;
+		if (minimatch(value, resolvedPattern)) {
 			return true;
 		}
 	}
