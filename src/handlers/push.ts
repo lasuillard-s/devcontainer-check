@@ -157,12 +157,22 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	log.debug(`Checking ${changedFiles.length} changed files for devcontainer-related changes...`);
 	if (!isDevContainerFileChanged(changedFiles)) {
 		log.debug('No devcontainer-related file changes detected. Skipping workflow dispatch.');
-		await octokit.rest.repos.createCommitStatus({
+		await octokit.rest.checks.create({
 			...repo,
-			sha,
-			state: 'success',
-			context: COMMIT_STATUS_CONTEXT,
-			description: 'Dev container configuration did not change.'
+			head_sha: sha,
+			name: COMMIT_STATUS_CONTEXT,
+			status: 'completed',
+			conclusion: 'success',
+			output: {
+				title: 'Dev container configuration did not change.',
+				summary: `
+There were ${changedFiles.length} changed files, but none of them were related to devcontainer configuration.
+
+Changed files:
+
+- ${changedFiles.join('\n- ')}
+`
+			}
 		});
 		return;
 	}
@@ -193,13 +203,16 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 	const workflowRunUrl = workflowDispatchResult?.html_url;
 
 	// Update commit status to pending with a link to the workflow run
-	await octokit.rest.repos.createCommitStatus({
+	await octokit.rest.checks.create({
 		...repo,
-		sha,
-		state: 'pending',
-		context: COMMIT_STATUS_CONTEXT,
-		description: 'Checking for dev container configuration...',
-		target_url: workflowRunUrl
+		head_sha: sha,
+		name: COMMIT_STATUS_CONTEXT,
+		status: 'in_progress',
+		details_url: workflowRunUrl,
+		output: {
+			title: 'Checking for dev container configuration...',
+			summary: 'Check is in progress. This might take a few minutes.'
+		}
 	});
 	log.info('Workflow dispatch event created successfully.');
 }
