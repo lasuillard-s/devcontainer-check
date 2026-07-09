@@ -12,7 +12,7 @@
 				"dbaeumer.vscode-eslint",
 				"esbenp.prettier-vscode",
 				"editorconfig.editorconfig",
-				"vitest.explorer"
+				"vitest.explorer",
 			]
 		}
 	}
