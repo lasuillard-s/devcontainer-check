@@ -3,6 +3,7 @@ import { Context } from 'probot';
 import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
 import { isDevContainerFileChanged } from '../devcontainer.js';
 import { branchNameFromRef } from '../git.js';
+import { Repo } from '../types.js';
 import { matchPatterns } from '../utils.js';
 import { CHECK_RUN_NAME, dispatchCheckWorkflow } from './common.js';
 
@@ -134,7 +135,7 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
  */
 async function getChangedFiles(
 	octokit: ProbotOctokit,
-	repo: { owner: string; repo: string },
+	repo: Repo,
 	basehead: string
 ): Promise<string[]> {
 	const files: string[] = [];

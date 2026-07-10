@@ -3,6 +3,7 @@ import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
 import { AppConfig } from '../config.js';
 import { downloadArtifactFileJSON } from '../octokit.js';
+import { Repo } from '../types.js';
 import { CHECK_RUN_NAME } from './common.js';
 import type { WorkflowInputs } from './types.js';
 
@@ -14,7 +15,7 @@ import type { WorkflowInputs } from './types.js';
  * @param appConfig Application configuration
  * @returns true if the repo matches a configured runner repository
  */
-function isMatchingRunner(repo: { owner: string; repo: string }, appConfig: AppConfig): boolean {
+function isMatchingRunner(repo: Repo, appConfig: AppConfig): boolean {
 	const runnerRepositories = [appConfig.RUNNER_REPOSITORY];
 	if (appConfig.RUNNER_REPOSITORY_FOR_PUBLIC) {
 		runnerRepositories.push(appConfig.RUNNER_REPOSITORY_FOR_PUBLIC);
@@ -41,7 +42,7 @@ function isMatchingRunner(repo: { owner: string; repo: string }, appConfig: AppC
  */
 async function fetchInputs(
 	octokit: ProbotOctokit,
-	repo: { owner: string; repo: string },
+	repo: Repo,
 	workflowRunId: number,
 	appConfig: AppConfig,
 	log: { error: (msg: string) => void }
@@ -98,7 +99,7 @@ export default async function handler(
 	log.info(`Workflow run completed. Retrieved workflow inputs: ${JSON.stringify(inputs)}`);
 
 	// Update the commit status based on the workflow run conclusion
-	const targetRepo = { owner: inputs.owner, repo: inputs.repo };
+	const targetRepo: Repo = { owner: inputs.owner, repo: inputs.repo };
 	const state = payload.workflow_run.conclusion === 'success' ? 'success' : 'failure';
 	await octokit.rest.checks.create({
 		...targetRepo,

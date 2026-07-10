@@ -2,6 +2,7 @@ import type { Logger } from 'pino';
 import type { ProbotOctokit } from 'probot';
 import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
 import { createWorkflowDispatch } from '../octokit.js';
+import { Repo } from '../types.js';
 import type { WorkflowInputs } from './types.js';
 
 export const CHECK_RUN_NAME = 'devcontainer-check';
@@ -13,8 +14,6 @@ export const CHECK_RUN_NAME = 'devcontainer-check';
  * @param params.octokit Octokit instance
  * @param params.log Logger
  * @param params.repo Repository info
- * @param params.repo.owner Repository owner
- * @param params.repo.repo Repository name
  * @param params.sha SHA of the commit
  * @param params.targetVisibility Visibility of the runner repository
  */
@@ -22,7 +21,7 @@ export async function dispatchCheckWorkflow(params: {
 	appConfig: AppConfig;
 	octokit: ProbotOctokit;
 	log: Logger;
-	repo: { owner: string; repo: string };
+	repo: Repo;
 	sha: string;
 	targetVisibility: string | undefined;
 }): Promise<void> {
