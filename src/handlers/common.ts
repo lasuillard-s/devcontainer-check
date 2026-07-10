@@ -5,7 +5,7 @@ import { createWorkflowDispatch } from '../octokit.js';
 import { Repo } from '../types.js';
 import type { WorkflowInputs } from './types.js';
 
-export const CHECK_RUN_NAME = 'devcontainer-check';
+export const CHECK_RUN_NAME = 'Dev Container Check';
 
 /**
  * Dispatches the check workflow to the runner repository.

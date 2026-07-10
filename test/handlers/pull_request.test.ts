@@ -67,7 +67,7 @@ test('dispatches a workflow when PR base branch matches PR_BRANCHES and devconta
 		.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 			expect(body).toStrictEqual({
 				head_sha: pushPayload.after,
-				name: 'devcontainer-check',
+				name: 'Dev Container Check',
 				status: 'in_progress',
 				details_url: workflowRunUrl,
 				output: {
@@ -100,7 +100,7 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 		.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 			expect(body).toStrictEqual({
 				head_sha: pushPayload.after,
-				name: 'devcontainer-check',
+				name: 'Dev Container Check',
 				status: 'completed',
 				conclusion: 'success',
 				output: {
