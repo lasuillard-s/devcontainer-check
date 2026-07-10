@@ -128,8 +128,6 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
  * Gets the list of changed files between two commits.
  * @param octokit Octokit instance
  * @param repo Repository info with owner and repo name
- * @param repo.owner Repository owner
- * @param repo.repo Repository name
  * @param basehead The base..head reference string
  * @returns Array of changed filenames
  */

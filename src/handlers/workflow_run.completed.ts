@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { Logger } from 'pino';
 import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
 import { AppConfig } from '../config.js';
@@ -10,8 +11,6 @@ import type { WorkflowInputs } from './types.js';
 /**
  * Checks if the current repository matches one of the configured runner repositories.
  * @param repo Repository info with owner and repo name
- * @param repo.owner Repository owner
- * @param repo.repo Repository name
  * @param appConfig Application configuration
  * @returns true if the repo matches a configured runner repository
  */
@@ -32,8 +31,6 @@ function isMatchingRunner(repo: Repo, appConfig: AppConfig): boolean {
  * Fetches and parses workflow inputs from a GitHub Actions artifact.
  * @param octokit Octokit instance
  * @param repo Repository info with owner and repo name
- * @param repo.owner Repository owner
- * @param repo.repo Repository name
  * @param workflowRunId ID of the workflow run
  * @param appConfig Application configuration
  * @param log Logger instance for error logging
@@ -45,7 +42,7 @@ async function fetchInputs(
 	repo: Repo,
 	workflowRunId: number,
 	appConfig: AppConfig,
-	log: { error: (msg: string) => void }
+	log: Logger
 ): Promise<WorkflowInputs | null> {
 	const inputs = await downloadArtifactFileJSON<WorkflowInputs>(octokit, {
 		...repo,
