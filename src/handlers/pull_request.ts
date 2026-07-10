@@ -2,7 +2,7 @@ import { Context } from 'probot';
 import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
 import { isDevContainerFileChanged } from '../devcontainer.js';
 import { matchPatterns } from '../utils.js';
-import { COMMIT_STATUS_CONTEXT, dispatchCheckWorkflow } from './common.js';
+import { CHECK_RUN_NAME, dispatchCheckWorkflow } from './common.js';
 
 /**
  * Handler for pull_request events on the target repository.
@@ -60,7 +60,7 @@ export default async function handler(context: Context<'pull_request'>, appConfi
 		await octokit.rest.checks.create({
 			...repo,
 			head_sha: sha,
-			name: COMMIT_STATUS_CONTEXT,
+			name: CHECK_RUN_NAME,
 			status: 'completed',
 			conclusion: 'success',
 			output: {

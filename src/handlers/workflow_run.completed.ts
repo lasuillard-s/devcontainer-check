@@ -3,7 +3,7 @@ import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
 import { AppConfig } from '../config.js';
 import { downloadArtifactFileJSON } from '../octokit.js';
-import { COMMIT_STATUS_CONTEXT } from './common.js';
+import { CHECK_RUN_NAME } from './common.js';
 import type { WorkflowInputs } from './types.js';
 
 /**
@@ -103,7 +103,7 @@ export default async function handler(
 	await octokit.rest.checks.create({
 		...targetRepo,
 		head_sha: inputs.sha,
-		name: COMMIT_STATUS_CONTEXT,
+		name: CHECK_RUN_NAME,
 		status: 'completed',
 		conclusion: state,
 		details_url: payload.workflow_run.html_url,

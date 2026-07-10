@@ -51,7 +51,7 @@ describe('when runner repository matches', () => {
 			.post('/repos/target-org/target-repo/check-runs', (body: unknown) => {
 				expect(body).toStrictEqual({
 					head_sha: 'abc1234',
-					name: 'Dev Container Check',
+					name: 'devcontainer-check',
 					status: 'completed',
 					conclusion: 'success',
 					details_url: payload.workflow_run.html_url,
@@ -93,7 +93,7 @@ describe('when runner repository matches', () => {
 			.post('/repos/target-org/target-repo/check-runs', (body: unknown) => {
 				expect(body).toStrictEqual({
 					head_sha: 'abc1234',
-					name: 'Dev Container Check',
+					name: 'devcontainer-check',
 					status: 'completed',
 					conclusion: 'failure',
 					details_url: failedPayload.workflow_run.html_url,

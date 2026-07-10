@@ -4,7 +4,7 @@ import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
 import { isDevContainerFileChanged } from '../devcontainer.js';
 import { branchNameFromRef } from '../git.js';
 import { matchPatterns } from '../utils.js';
-import { COMMIT_STATUS_CONTEXT, dispatchCheckWorkflow } from './common.js';
+import { CHECK_RUN_NAME, dispatchCheckWorkflow } from './common.js';
 
 /** Helper type to extract the correct type for the files array in the response. */
 type DiffEntries = Awaited<
@@ -101,7 +101,7 @@ export default async function handler(context: Context<'push'>, appConfig: AppCo
 		await octokit.rest.checks.create({
 			...repo,
 			head_sha: sha,
-			name: COMMIT_STATUS_CONTEXT,
+			name: CHECK_RUN_NAME,
 			status: 'completed',
 			conclusion: 'success',
 			output: {

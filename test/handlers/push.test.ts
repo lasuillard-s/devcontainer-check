@@ -59,7 +59,7 @@ test('dispatches a workflow when devcontainer files are changed', async ({ probo
 		.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 			expect(body).toStrictEqual({
 				head_sha: payload.after,
-				name: 'Dev Container Check',
+				name: 'devcontainer-check',
 				status: 'in_progress',
 				details_url: workflowRunUrl,
 				output: {
@@ -113,7 +113,7 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 		.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 			expect(body).toStrictEqual({
 				head_sha: payload.after,
-				name: 'Dev Container Check',
+				name: 'devcontainer-check',
 				status: 'completed',
 				conclusion: 'success',
 				output: {
@@ -166,7 +166,7 @@ test('on new branch creations, compare commits with default branch', async ({ pr
 		.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 			expect(body).toStrictEqual({
 				head_sha: payload.after,
-				name: 'Dev Container Check',
+				name: 'devcontainer-check',
 				status: 'in_progress',
 				details_url: workflowRunUrl,
 				output: {
@@ -295,7 +295,7 @@ describe('deduplication when push has associated pull requests', () => {
 				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: payload.after,
-						name: 'Dev Container Check',
+						name: 'devcontainer-check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
@@ -369,7 +369,7 @@ describe('private repository guardrail behavior', () => {
 				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: payload.after,
-						name: 'Dev Container Check',
+						name: 'devcontainer-check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
@@ -437,7 +437,7 @@ describe('private repository guardrail behavior', () => {
 					.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 						expect(body).toStrictEqual({
 							head_sha: payload.after,
-							name: 'Dev Container Check',
+							name: 'devcontainer-check',
 							status: 'in_progress',
 							details_url: workflowRunUrl,
 							output: {
@@ -490,7 +490,7 @@ describe('private repository guardrail behavior', () => {
 				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: payload.after,
-						name: 'Dev Container Check',
+						name: 'devcontainer-check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
@@ -534,7 +534,7 @@ describe('private repository guardrail behavior', () => {
 				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: payload.after,
-						name: 'Dev Container Check',
+						name: 'devcontainer-check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
@@ -587,7 +587,7 @@ describe('private repository guardrail behavior', () => {
 				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: payload.after,
-						name: 'Dev Container Check',
+						name: 'devcontainer-check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
@@ -631,7 +631,7 @@ describe('private repository guardrail behavior', () => {
 				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: payload.after,
-						name: 'Dev Container Check',
+						name: 'devcontainer-check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {

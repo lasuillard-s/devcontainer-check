@@ -4,7 +4,7 @@ import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
 import { createWorkflowDispatch } from '../octokit.js';
 import type { WorkflowInputs } from './types.js';
 
-export const COMMIT_STATUS_CONTEXT = 'Dev Container Check';
+export const CHECK_RUN_NAME = 'devcontainer-check';
 
 /**
  * Dispatches the check workflow to the runner repository.
@@ -62,7 +62,7 @@ export async function dispatchCheckWorkflow(params: {
 	await octokit.rest.checks.create({
 		...repo,
 		head_sha: sha,
-		name: COMMIT_STATUS_CONTEXT,
+		name: CHECK_RUN_NAME,
 		status: 'in_progress',
 		details_url: workflowRunUrl,
 		output: {
