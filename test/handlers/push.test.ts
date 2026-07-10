@@ -118,13 +118,7 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 				conclusion: 'success',
 				output: {
 					title: 'Dev container configuration did not change.',
-					summary: `
-There were 1 changed files, but none of them were related to devcontainer configuration.
-
-Changed files:
-
-- package.json
-`
+					summary: `There were 1 changed files, but none of them were related to devcontainer configuration.`
 				}
 			});
 			return true;
@@ -235,59 +229,20 @@ test('ignore tag pushes', async ({ probot }) => {
 	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
-describe('when push has associated pull requests', () => {
+describe('deduplication when push has associated pull requests', () => {
 	beforeEach(() => {
 		vi.stubEnv('PR_BRANCHES', 'main');
 	});
 
-	test('dispatches a workflow when PR base branch matches PR_BRANCHES', async ({ probot }) => {
+	test('skips dispatch when push commit is associated with an open PR matching PR_BRANCHES', async ({
+		probot
+	}) => {
 		// Arrange
-		const workflowRunUrl = 'https://github.com/acme/devcontainer-check-runner/actions/runs/456';
 		const mock = nock('https://api.github.com')
 			.post(`/app/installations/${installationId}/access_tokens`)
 			.reply(200, { token: 'test', permissions: { actions: 'write' } })
 			.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
-			.reply(200, [{ base: { ref: 'main' } }])
-			.get('/repos/devcontainer-check-org/devcontainer-check')
-			.reply(200, { default_branch: 'main', visibility: 'public' })
-			.get(
-				`/repos/devcontainer-check-org/devcontainer-check/compare/${payload.before}...${payload.after}`
-			)
-			.reply(200, {
-				files: [{ filename: '.devcontainer/devcontainer.json', status: 'modified' }]
-			})
-			.get('/repos/acme/devcontainer-check-runner')
-			.reply(200, { default_branch: 'main' })
-			.post(
-				'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches',
-				(body: unknown) => {
-					expect(body).toStrictEqual({
-						ref: 'main',
-						inputs: {
-							owner: 'devcontainer-check-org',
-							repo: 'devcontainer-check',
-							sha: payload.after
-						},
-						return_run_details: true
-					});
-					return true;
-				}
-			)
-			.reply(201, { html_url: workflowRunUrl })
-			.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
-				expect(body).toStrictEqual({
-					head_sha: payload.after,
-					name: 'Dev Container Check',
-					status: 'in_progress',
-					details_url: workflowRunUrl,
-					output: {
-						title: 'Checking for dev container configuration...',
-						summary: 'Check is in progress. This might take a few minutes.'
-					}
-				});
-				return true;
-			})
-			.reply(201);
+			.reply(200, [{ state: 'open', base: { ref: 'main' } }]);
 
 		// Act
 		// @ts-expect-error Ignore fixture modification
@@ -298,18 +253,59 @@ describe('when push has associated pull requests', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	describe('when PR base branch does not match PR_BRANCHES', () => {
+	describe('when PR base branch does not match PR_BRANCHES or PR is closed', () => {
 		beforeEach(() => {
 			vi.stubEnv('PR_BRANCHES', 'release');
 		});
 
-		test('does not dispatch a workflow', async ({ probot }) => {
+		test('dispatches a workflow', async ({ probot }) => {
 			// Arrange
+			const workflowRunUrl = 'https://github.com/acme/devcontainer-check-runner/actions/runs/456';
 			const mock = nock('https://api.github.com')
 				.post(`/app/installations/${installationId}/access_tokens`)
 				.reply(200, { token: 'test', permissions: { actions: 'write' } })
 				.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
-				.reply(200, [{ base: { ref: 'main' } }]);
+				.reply(200, [{ state: 'open', base: { ref: 'main' } }]) // 'main' doesn't match 'release'
+				.get('/repos/devcontainer-check-org/devcontainer-check')
+				.reply(200, { default_branch: 'main', visibility: 'public' })
+				.get(
+					`/repos/devcontainer-check-org/devcontainer-check/compare/${payload.before}...${payload.after}`
+				)
+				.reply(200, {
+					files: [{ filename: '.devcontainer/devcontainer.json', status: 'modified' }]
+				})
+				.get('/repos/acme/devcontainer-check-runner')
+				.reply(200, { default_branch: 'main' })
+				.post(
+					'/repos/acme/devcontainer-check-runner/actions/workflows/devcontainer-check.yaml/dispatches',
+					(body: unknown) => {
+						expect(body).toStrictEqual({
+							ref: 'main',
+							inputs: {
+								owner: 'devcontainer-check-org',
+								repo: 'devcontainer-check',
+								sha: payload.after
+							},
+							return_run_details: true
+						});
+						return true;
+					}
+				)
+				.reply(201, { html_url: workflowRunUrl })
+				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
+					expect(body).toStrictEqual({
+						head_sha: payload.after,
+						name: 'Dev Container Check',
+						status: 'in_progress',
+						details_url: workflowRunUrl,
+						output: {
+							title: 'Checking for dev container configuration...',
+							summary: 'Check is in progress. This might take a few minutes.'
+						}
+					});
+					return true;
+				})
+				.reply(201);
 
 			// Act
 			// @ts-expect-error Ignore fixture modification
@@ -322,29 +318,23 @@ describe('when push has associated pull requests', () => {
 	});
 });
 
-describe('when push has no associated pull requests', () => {
-	beforeEach(() => {
-		vi.stubEnv('PUSH_BRANCHES', 'main');
-	});
+test('does not dispatch a workflow when branch does not match PUSH_BRANCHES', async ({
+	probot
+}) => {
+	// Arrange
+	const payloadWithDifferentBranch = structuredClone(payload);
+	payloadWithDifferentBranch.ref = 'refs/heads/feature-branch';
 
-	test('does not dispatch a workflow when branch does not match PUSH_BRANCHES', async ({
-		probot
-	}) => {
-		// Arrange
-		const mock = nock('https://api.github.com')
-			.post(`/app/installations/${installationId}/access_tokens`)
-			.reply(200, { token: 'test', permissions: { actions: 'write' } })
-			.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
-			.reply(200, []);
+	const mock = nock('https://api.github.com');
+	// The PR query is skipped because branch mismatch fails early
 
-		// Act
-		// @ts-expect-error Ignore fixture modification
-		await probot.receive({ id: '', name: 'push', payload });
+	// Act
+	// @ts-expect-error Ignore fixture modification
+	await probot.receive({ id: '', name: 'push', payload: payloadWithDifferentBranch });
 
-		// Assert
-		expect(mock.isDone()).toBe(true);
-		expect(mock.pendingMocks()).toStrictEqual([]);
-	});
+	// Assert
+	expect(mock.isDone()).toBe(true);
+	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
 describe('private repository guardrail behavior', () => {
