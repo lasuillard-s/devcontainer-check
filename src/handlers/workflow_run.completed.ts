@@ -1,20 +1,20 @@
 import path from 'node:path';
+import type { Logger } from 'pino';
 import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
 import { AppConfig } from '../config.js';
 import { downloadArtifactFileJSON } from '../octokit.js';
-import { COMMIT_STATUS_CONTEXT } from './common.js';
+import { Repo } from '../types.js';
+import { CHECK_RUN_NAME } from './common.js';
 import type { WorkflowInputs } from './types.js';
 
 /**
  * Checks if the current repository matches one of the configured runner repositories.
  * @param repo Repository info with owner and repo name
- * @param repo.owner Repository owner
- * @param repo.repo Repository name
  * @param appConfig Application configuration
  * @returns true if the repo matches a configured runner repository
  */
-function isMatchingRunner(repo: { owner: string; repo: string }, appConfig: AppConfig): boolean {
+function isMatchingRunner(repo: Repo, appConfig: AppConfig): boolean {
 	const runnerRepositories = [appConfig.RUNNER_REPOSITORY];
 	if (appConfig.RUNNER_REPOSITORY_FOR_PUBLIC) {
 		runnerRepositories.push(appConfig.RUNNER_REPOSITORY_FOR_PUBLIC);
@@ -31,8 +31,6 @@ function isMatchingRunner(repo: { owner: string; repo: string }, appConfig: AppC
  * Fetches and parses workflow inputs from a GitHub Actions artifact.
  * @param octokit Octokit instance
  * @param repo Repository info with owner and repo name
- * @param repo.owner Repository owner
- * @param repo.repo Repository name
  * @param workflowRunId ID of the workflow run
  * @param appConfig Application configuration
  * @param log Logger instance for error logging
@@ -41,10 +39,10 @@ function isMatchingRunner(repo: { owner: string; repo: string }, appConfig: AppC
  */
 async function fetchInputs(
 	octokit: ProbotOctokit,
-	repo: { owner: string; repo: string },
+	repo: Repo,
 	workflowRunId: number,
 	appConfig: AppConfig,
-	log: { error: (msg: string) => void }
+	log: Logger
 ): Promise<WorkflowInputs | null> {
 	const inputs = await downloadArtifactFileJSON<WorkflowInputs>(octokit, {
 		...repo,
@@ -98,12 +96,12 @@ export default async function handler(
 	log.info(`Workflow run completed. Retrieved workflow inputs: ${JSON.stringify(inputs)}`);
 
 	// Update the commit status based on the workflow run conclusion
-	const targetRepo = { owner: inputs.owner, repo: inputs.repo };
+	const targetRepo: Repo = { owner: inputs.owner, repo: inputs.repo };
 	const state = payload.workflow_run.conclusion === 'success' ? 'success' : 'failure';
 	await octokit.rest.checks.create({
 		...targetRepo,
 		head_sha: inputs.sha,
-		name: COMMIT_STATUS_CONTEXT,
+		name: CHECK_RUN_NAME,
 		status: 'completed',
 		conclusion: state,
 		details_url: payload.workflow_run.html_url,

@@ -1,5 +1,6 @@
 import type { Probot } from 'probot';
 import * as z from 'zod';
+import { Repo } from './types.js';
 import { errorToString } from './utils.js';
 
 export const DEFAULT_BRANCH_ALIAS = '~DEFAULT_BRANCH';
@@ -97,7 +98,7 @@ function validateRepositoryFormat(value: string): boolean {
  * @param repoString Repository string to convert
  * @returns An object containing the owner and repo
  */
-function toRepoObject(repoString: string): { owner: string; repo: string } {
+function toRepoObject(repoString: string): Repo {
 	const [owner, repo] = repoString.split('/');
 	return { owner, repo };
 }
