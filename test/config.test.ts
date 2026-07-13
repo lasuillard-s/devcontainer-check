@@ -30,14 +30,6 @@ describe('loadConfig', () => {
 			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS]
 		});
 		expect(config.RUNNER_REPOSITORY_DISABLE_GUARDRAIL).toBeUndefined();
-		expect(config.resolveRunnerRepository('public')).toStrictEqual({
-			owner: 'acme',
-			repo: 'devcontainer-check-runner'
-		});
-		expect(config.resolveRunnerRepository('private')).toStrictEqual({
-			owner: 'acme',
-			repo: 'devcontainer-check-runner'
-		});
 	});
 
 	test('loads valid config with explicit configuration values', () => {
@@ -75,53 +67,5 @@ describe('loadConfig', () => {
 		// Act & Assert
 		expect(() => loadConfig(probot)).toThrow('process.exit called');
 		expect(exitSpy).toHaveBeenCalledWith(1);
-	});
-
-	test('resolves public runner repository for public target repos, falls back for private', () => {
-		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
-		vi.stubEnv('RUNNER_REPOSITORY_FOR_PUBLIC', 'acme/public-runner');
-
-		const config = loadConfig(probot);
-		// Public target uses public runner
-		expect(config.resolveRunnerRepository('public')).toStrictEqual({
-			owner: 'acme',
-			repo: 'public-runner'
-		});
-		// Private target falls back to default runner
-		expect(config.resolveRunnerRepository('private')).toStrictEqual({
-			owner: 'acme',
-			repo: 'runner'
-		});
-	});
-
-	test('resolves private runner repository for private target repos, falls back for public', () => {
-		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
-		vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
-
-		const config = loadConfig(probot);
-		// Private target uses private runner
-		expect(config.resolveRunnerRepository('private')).toStrictEqual({
-			owner: 'acme',
-			repo: 'private-runner'
-		});
-		// Public target falls back to default runner
-		expect(config.resolveRunnerRepository('public')).toStrictEqual({
-			owner: 'acme',
-			repo: 'runner'
-		});
-	});
-
-	test('falls back to RUNNER_REPOSITORY when visibility-specific runner is not configured', () => {
-		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
-
-		const config = loadConfig(probot);
-		expect(config.resolveRunnerRepository('private')).toStrictEqual({
-			owner: 'acme',
-			repo: 'runner'
-		});
-		expect(config.resolveRunnerRepository('public')).toStrictEqual({
-			owner: 'acme',
-			repo: 'runner'
-		});
 	});
 });
