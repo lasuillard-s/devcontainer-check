@@ -6,22 +6,14 @@ import { errorToString } from './utils.js';
 export const DEFAULT_BRANCH_ALIAS = '~DEFAULT_BRANCH';
 
 export const AppConfig = z.object({
-	/** Full name (owner/repo) of the repository where the runner workflow is defined. */
+	/** Full name (owner/repo) of the runner repository used for public target repositories. */
 	RUNNER_REPOSITORY: z
 		.string()
 		.refine(validateRepositoryFormat, {
 			message: 'RUNNER_REPOSITORY must be in the format "owner/repo"'
 		})
 		.transform(Repo.fromFullName),
-	/** Full name (owner/repo) of the repository where the runner workflow is defined for public repositories. Falls back to RUNNER_REPOSITORY. */
-	RUNNER_REPOSITORY_FOR_PUBLIC: z
-		.string()
-		.refine(validateRepositoryFormat, {
-			message: 'RUNNER_REPOSITORY_FOR_PUBLIC must be in the format "owner/repo"'
-		})
-		.transform(Repo.fromFullName)
-		.optional(),
-	/** Full name (owner/repo) of the repository where the runner workflow is defined for private repositories. Falls back to RUNNER_REPOSITORY. */
+	/** Full name (owner/repo) of the runner repository used for private target repositories. If unset, checks for private repositories are skipped. */
 	RUNNER_REPOSITORY_FOR_PRIVATE: z
 		.string()
 		.refine(validateRepositoryFormat, {
@@ -29,8 +21,8 @@ export const AppConfig = z.object({
 		})
 		.transform(Repo.fromFullName)
 		.optional(),
-	/** Set to true to allow dispatching to public runners for private repositories. */
-	RUNNER_REPOSITORY_DISABLE_GUARDRAIL: z.string().optional().transform(toBoolean),
+	/** Set to true to allow dispatching private target repositories to the public runner when no private runner repository is configured. Off by default. */
+	USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES: z.string().optional().transform(toBoolean),
 	/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
 	CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
 	/** Reference for the workflow dispatch event. Defaults to the default branch of the runner repository. */

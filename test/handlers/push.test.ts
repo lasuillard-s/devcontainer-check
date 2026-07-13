@@ -10,7 +10,6 @@ beforeEach(() => {
 	vi.stubEnv('CHECK_WORKFLOW_NAME', 'devcontainer-check.yaml');
 	vi.stubEnv('CHECK_WORKFLOW_REF', undefined);
 	vi.stubEnv('PUSH_BRANCHES', 'setup-devenv');
-	vi.stubEnv('RUNNER_REPOSITORY_DISABLE_GUARDRAIL', 'true');
 });
 
 test('dispatches a workflow when devcontainer files are changed', async ({ probot }) => {
@@ -337,13 +336,12 @@ test('does not dispatch a workflow when branch does not match PUSH_BRANCHES', as
 	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
-describe('private repository guardrail behavior', () => {
-	describe('when RUNNER_REPOSITORY_FOR_PUBLIC is set (public runner for both)', () => {
+describe('private repository runner selection', () => {
+	describe('when only the public runner is configured', () => {
 		beforeEach(() => {
 			vi.stubEnv('RUNNER_REPOSITORY', 'acme/public-runner');
-			vi.stubEnv('RUNNER_REPOSITORY_FOR_PUBLIC', 'acme/public-runner');
 			vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', undefined);
-			vi.stubEnv('RUNNER_REPOSITORY_DISABLE_GUARDRAIL', undefined);
+			vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', undefined);
 		});
 
 		test('dispatches workflow for public repository', async ({ probot }) => {
@@ -390,7 +388,9 @@ describe('private repository guardrail behavior', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		test('skips workflow for private repository when guardrail is enabled', async ({ probot }) => {
+		test('skips workflow for private repository when no private runner is configured', async ({
+			probot
+		}) => {
 			// Arrange
 			const mock = nock('https://api.github.com')
 				.post(`/app/installations/${installationId}/access_tokens`)
@@ -409,12 +409,14 @@ describe('private repository guardrail behavior', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		describe('when guardrail is disabled', () => {
+		describe('when USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES is true', () => {
 			beforeEach(() => {
-				vi.stubEnv('RUNNER_REPOSITORY_DISABLE_GUARDRAIL', 'true');
+				vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', 'true');
 			});
 
-			test('dispatches workflow for private repository', async ({ probot }) => {
+			test('dispatches workflow for private repository using the public runner', async ({
+				probot
+			}) => {
 				// Arrange
 				const workflowRunUrl = 'https://github.com/acme/public-runner/actions/runs/123';
 				const mock = nock('https://api.github.com')
@@ -460,11 +462,10 @@ describe('private repository guardrail behavior', () => {
 		});
 	});
 
-	describe('when RUNNER_REPOSITORY_FOR_PRIVATE is set (private runner for private repos)', () => {
+	describe('when a private runner is configured', () => {
 		beforeEach(() => {
 			vi.stubEnv('RUNNER_REPOSITORY', 'acme/default-runner');
 			vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
-			vi.stubEnv('RUNNER_REPOSITORY_DISABLE_GUARDRAIL', undefined);
 		});
 
 		test('dispatches workflow for private repository using private runner', async ({ probot }) => {
@@ -530,103 +531,6 @@ describe('private repository guardrail behavior', () => {
 				.get('/repos/acme/default-runner')
 				.reply(200, { default_branch: 'main' })
 				.post('/repos/acme/default-runner/actions/workflows/devcontainer-check.yaml/dispatches')
-				.reply(201, { html_url: workflowRunUrl })
-				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
-					expect(body).toStrictEqual({
-						head_sha: payload.after,
-						name: 'Dev Container Check',
-						status: 'in_progress',
-						details_url: workflowRunUrl,
-						output: {
-							title: 'Checking for dev container configuration...',
-							summary: 'Check is in progress. This might take a few minutes.'
-						}
-					});
-					return true;
-				})
-				.reply(201);
-
-			// Act
-			// @ts-expect-error Ignore fixture modification
-			await probot.receive({ id: '', name: 'push', payload });
-
-			// Assert
-			expect(mock.isDone()).toBe(true);
-			expect(mock.pendingMocks()).toStrictEqual([]);
-		});
-	});
-
-	describe('when both public and private runners are configured', () => {
-		beforeEach(() => {
-			vi.stubEnv('RUNNER_REPOSITORY', 'acme/default-runner');
-			vi.stubEnv('RUNNER_REPOSITORY_FOR_PUBLIC', 'acme/public-runner');
-			vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
-			vi.stubEnv('RUNNER_REPOSITORY_DISABLE_GUARDRAIL', 'true');
-		});
-
-		test('dispatches for public repo using public runner', async ({ probot }) => {
-			// Arrange
-			const workflowRunUrl = 'https://github.com/acme/public-runner/actions/runs/123';
-			const mock = nock('https://api.github.com')
-				.post(`/app/installations/${installationId}/access_tokens`)
-				.reply(200, { token: 'test', permissions: { actions: 'write' } })
-				.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
-				.reply(200, [])
-				.get('/repos/devcontainer-check-org/devcontainer-check')
-				.reply(200, { default_branch: 'main', visibility: 'public' })
-				.get(
-					`/repos/devcontainer-check-org/devcontainer-check/compare/${payload.before}...${payload.after}`
-				)
-				.reply(200, {
-					files: [{ filename: '.devcontainer.example/devcontainer.json', status: 'modified' }]
-				})
-				.get('/repos/acme/public-runner')
-				.reply(200, { default_branch: 'main' })
-				.post('/repos/acme/public-runner/actions/workflows/devcontainer-check.yaml/dispatches')
-				.reply(201, { html_url: workflowRunUrl })
-				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
-					expect(body).toStrictEqual({
-						head_sha: payload.after,
-						name: 'Dev Container Check',
-						status: 'in_progress',
-						details_url: workflowRunUrl,
-						output: {
-							title: 'Checking for dev container configuration...',
-							summary: 'Check is in progress. This might take a few minutes.'
-						}
-					});
-					return true;
-				})
-				.reply(201);
-
-			// Act
-			// @ts-expect-error Ignore fixture modification
-			await probot.receive({ id: '', name: 'push', payload });
-
-			// Assert
-			expect(mock.isDone()).toBe(true);
-			expect(mock.pendingMocks()).toStrictEqual([]);
-		});
-
-		test('dispatches for private repo using private runner', async ({ probot }) => {
-			// Arrange
-			const workflowRunUrl = 'https://github.com/acme/private-runner/actions/runs/123';
-			const mock = nock('https://api.github.com')
-				.post(`/app/installations/${installationId}/access_tokens`)
-				.reply(200, { token: 'test', permissions: { actions: 'write' } })
-				.get(`/repos/devcontainer-check-org/devcontainer-check/commits/${payload.after}/pulls`)
-				.reply(200, [])
-				.get('/repos/devcontainer-check-org/devcontainer-check')
-				.reply(200, { default_branch: 'main', visibility: 'private' })
-				.get(
-					`/repos/devcontainer-check-org/devcontainer-check/compare/${payload.before}...${payload.after}`
-				)
-				.reply(200, {
-					files: [{ filename: '.devcontainer.example/devcontainer.json', status: 'modified' }]
-				})
-				.get('/repos/acme/private-runner')
-				.reply(200, { default_branch: 'main' })
-				.post('/repos/acme/private-runner/actions/workflows/devcontainer-check.yaml/dispatches')
 				.reply(201, { html_url: workflowRunUrl })
 				.post(`/repos/devcontainer-check-org/devcontainer-check/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({

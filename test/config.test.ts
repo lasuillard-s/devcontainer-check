@@ -14,7 +14,7 @@ describe('loadConfig', () => {
 		} as unknown as Probot;
 	});
 
-	test('loads valid config and applies defaults', () => {
+	test('loads valid config with reasonable defaults', () => {
 		// Arrange (required only)
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
 
@@ -29,24 +29,26 @@ describe('loadConfig', () => {
 			PUSH_BRANCHES: [DEFAULT_BRANCH_ALIAS],
 			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS]
 		});
-		expect(config.RUNNER_REPOSITORY_DISABLE_GUARDRAIL).toBeUndefined();
 	});
 
 	test('loads valid config with explicit configuration values', () => {
 		// Arrange
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
+		vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
+		vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', 'false');
 		vi.stubEnv('CHECK_WORKFLOW_NAME', 'custom-check.yaml');
 		vi.stubEnv('CHECK_WORKFLOW_REF', 'release-1');
 		vi.stubEnv('CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME', 'my-workflow-inputs');
 		vi.stubEnv('CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH', 'my-inputs.json');
 		vi.stubEnv('PUSH_BRANCHES', 'main,develop');
 		vi.stubEnv('PR_BRANCHES', 'feature/*');
-		vi.stubEnv('RUNNER_REPOSITORY_DISABLE_GUARDRAIL', 'true');
 
 		// Act & Assert
 		const config = loadConfig(probot);
 		expect(config).toMatchObject({
 			RUNNER_REPOSITORY: { owner: 'acme', repo: 'devcontainer-check-runner' },
+			RUNNER_REPOSITORY_FOR_PRIVATE: { owner: 'acme', repo: 'private-runner' },
+			USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES: false,
 			CHECK_WORKFLOW_NAME: 'custom-check.yaml',
 			CHECK_WORKFLOW_REF: 'release-1',
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'my-workflow-inputs',
@@ -54,7 +56,6 @@ describe('loadConfig', () => {
 			PUSH_BRANCHES: ['main', 'develop'],
 			PR_BRANCHES: ['feature/*']
 		});
-		expect(config.RUNNER_REPOSITORY_DISABLE_GUARDRAIL).toBe(true);
 	});
 
 	test('logs and exits when RUNNER_REPOSITORY format is invalid', () => {

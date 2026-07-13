@@ -1,9 +1,8 @@
-import { Probot } from 'probot';
-import { Context } from 'probot';
+import { Context, Probot } from 'probot';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '../../src/config.js';
-import { Repo } from '../../src/types.js';
 import { BaseHandler } from '../../src/handlers/base.js';
+import { Repo } from '../../src/types.js';
 
 /**
  * Minimal concrete subclass used to exercise the shared helpers on BaseHandler.
@@ -42,80 +41,53 @@ describe('BaseHandler.getRunnerFor', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
 	});
 
-	it('resolves public runner repository for public target repos, falls back for private', () => {
-		vi.stubEnv('RUNNER_REPOSITORY_FOR_PUBLIC', 'acme/public-runner');
-
-		const handler = makeHandler({ RUNNER_REPOSITORY_FOR_PUBLIC: 'acme/public-runner' });
-		// Public target uses public runner
-		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'public')).toEqual(
-			new Repo('acme', 'public-runner')
-		);
-		// Private target is blocked (no private runner configured)
-		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toBeNull();
-	});
-
-	it('resolves private runner repository for private target repos, falls back for public', () => {
-		vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
-
-		const handler = makeHandler({ RUNNER_REPOSITORY_FOR_PRIVATE: 'acme/private-runner' });
-		// Private target uses private runner
-		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toEqual(
-			new Repo('acme', 'private-runner')
-		);
-		// Public target falls back to default runner
-		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'public')).toEqual(
-			new Repo('acme', 'runner')
-		);
-	});
-
-	it('falls back to RUNNER_REPOSITORY for public targets and blocks private targets without a private runner', () => {
+	it('returns the public runner for public target repositories', () => {
 		const handler = makeHandler({});
-		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toBeNull();
 		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'public')).toEqual(
 			new Repo('acme', 'runner')
 		);
 	});
 
-	it('returns null and logs a warning for a private target without a private runner (guardrail)', () => {
+	it('returns null for an internal target with no private runner configured', () => {
 		const handler = makeHandler({});
-		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toBeNull();
-		expect(handler.log.warn).toHaveBeenCalled();
+		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'internal')).toBeNull();
 	});
 
-	it('does not block a private target when the guardrail is disabled', () => {
-		const handler = makeHandler({ RUNNER_REPOSITORY_DISABLE_GUARDRAIL: 'true' });
-		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toEqual(
-			new Repo('acme', 'runner')
-		);
-	});
-
-	it('does not block a private target when a private runner is configured', () => {
+	it('returns the configured private runner for private target repositories', () => {
 		const handler = makeHandler({ RUNNER_REPOSITORY_FOR_PRIVATE: 'acme/private-runner' });
 		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toEqual(
 			new Repo('acme', 'private-runner')
+		);
+	});
+
+	it('returns null when a private target has no private runner configured', () => {
+		const handler = makeHandler({});
+		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toBeNull();
+	});
+
+	it('uses the public runner for a private target when USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES is set', () => {
+		const handler = makeHandler({ USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES: 'true' });
+		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toEqual(
+			new Repo('acme', 'runner')
 		);
 	});
 });
 
-describe('BaseHandler.isMatchingRunner', () => {
+describe('BaseHandler.isRunnerRepo', () => {
 	beforeEach(() => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
 	});
 
-	it('matches the default runner repository', () => {
+	it('matches the public runner repository', () => {
 		const handler = makeHandler({});
-		expect(handler.isMatchingRunner(new Repo('acme', 'runner'))).toBe(true);
-		expect(handler.isMatchingRunner(new Repo('other', 'runner'))).toBe(false);
+		expect(handler.isRunnerRepo(new Repo('acme', 'runner'))).toBe(true);
+		expect(handler.isRunnerRepo(new Repo('other', 'runner'))).toBe(false);
 	});
 
-	it('matches visibility-specific runner repositories', () => {
-		const handler = makeHandler({
-			RUNNER_REPOSITORY_FOR_PUBLIC: 'acme/public-runner',
-			RUNNER_REPOSITORY_FOR_PRIVATE: 'acme/private-runner'
-		});
-		expect(handler.isMatchingRunner(new Repo('acme', 'public-runner'))).toBe(true);
-		expect(handler.isMatchingRunner(new Repo('acme', 'private-runner'))).toBe(true);
-		expect(handler.isMatchingRunner(new Repo('acme', 'runner'))).toBe(true);
-		expect(handler.isMatchingRunner(new Repo('acme', 'unknown'))).toBe(false);
+	it('matches the configured private runner repository', () => {
+		const handler = makeHandler({ RUNNER_REPOSITORY_FOR_PRIVATE: 'acme/private-runner' });
+		expect(handler.isRunnerRepo(new Repo('acme', 'private-runner'))).toBe(true);
+		expect(handler.isRunnerRepo(new Repo('acme', 'runner'))).toBe(true);
+		expect(handler.isRunnerRepo(new Repo('acme', 'unknown'))).toBe(false);
 	});
 });

@@ -79,9 +79,12 @@ export default class PushHandler extends BaseHandler<Context<'push'>> {
 
 		// Get target repository visibility before comparing commits (optimization: skip compare if guardrail blocks)
 		const targetRepoDetail = await this.octokit.rest.repos.get({ ...repo });
-		const targetVisibility = targetRepoDetail.data.visibility;
-		const runnerRepo = this.getRunnerFor(repo, targetVisibility);
+		const visibility = targetRepoDetail.data.visibility ?? 'public';
+		const runnerRepo = this.getRunnerFor(repo, visibility as 'public' | 'private' | 'internal');
 		if (!runnerRepo) {
+			this.log.warn(
+				`Unable to resolve runner repository for ${visibility} target repository ${repo.toFullName()}. Skipping workflow dispatch.`
+			);
 			return;
 		}
 

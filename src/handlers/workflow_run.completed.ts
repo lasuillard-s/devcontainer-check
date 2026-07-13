@@ -1,8 +1,8 @@
 import AdmZip from 'adm-zip';
 import path from 'node:path';
 import { Context } from 'probot';
-import { errorToString } from '../utils.js';
 import { Repo } from '../types.js';
+import { errorToString } from '../utils.js';
 import { BaseHandler, CHECK_RUN_NAME } from './base.js';
 import type { WorkflowInputs } from './types.js';
 
@@ -21,7 +21,8 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 		);
 
 		// Only listen to workflow run completion events of the runner repository
-		const isMatchingRunnerRepository = this.isMatchingRunner(repo);
+		const isRunnerRepo = this.isRunnerRepo(repo);
+
 		// We check the filename (e.g., devcontainer-check.yaml) rather than a hardcoded ID for flexibility.
 		const isTargetWorkflow =
 			path.basename(
@@ -29,7 +30,7 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 				// For now, we will treat null as non-matching workflow to avoid potential issues.
 				payload.workflow?.path ?? ''
 			) === this.appConfig.CHECK_WORKFLOW_NAME;
-		if (!isMatchingRunnerRepository || !isTargetWorkflow) {
+		if (!isRunnerRepo || !isTargetWorkflow) {
 			this.log.debug(
 				`Workflow run completed for ${payload.repository.full_name}, which does not match the configured runner repository. Ignoring event.`
 			);

@@ -50,35 +50,37 @@ export abstract class BaseHandler<C extends Context = Context> {
 	 * Resolves the runner repository to dispatch the check workflow to for the given
 	 * target repository and its visibility.
 	 *
-	 * A private target repository requires a private runner repository unless the guardrail
-	 * is disabled; when no suitable runner is found, a warning is logged and `null` is returned
-	 * so the caller can skip dispatching.
+	 * Public targets use `RUNNER_REPOSITORY`. Private or internal targets use
+	 * `RUNNER_REPOSITORY_FOR_PRIVATE` when configured; when it is not set, a warning is logged
+	 * and `null` is returned so the caller skips dispatching. The `USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES`
+	 * toggle overrides this guardrail and dispatches private/internal targets to the public runner instead.
 	 * @param repo The target repository the check is for
-	 * @param targetVisibility Visibility of the target repository ('public', 'private', or undefined)
-	 * @returns The resolved runner repository, or null if no runner matches (private protection)
+	 * @param visibility Visibility of the target repository ('public', 'private', or 'internal')
+	 * @returns The resolved runner repository, or null if no runner is configured for the target
 	 */
-	protected getRunnerFor(repo: Repo, targetVisibility: string | undefined): Repo | null {
-		if (!targetVisibility || targetVisibility === 'public') {
-			const runnerPublic = this.appConfig.RUNNER_REPOSITORY_FOR_PUBLIC;
-			if (runnerPublic) return runnerPublic;
+	public getRunnerFor(repo: Repo, visibility: 'public' | 'private' | 'internal'): Repo | null {
+		if (visibility === 'public') {
+			return this.appConfig.RUNNER_REPOSITORY;
 		}
-		if (targetVisibility && targetVisibility !== 'public') {
-			const runnerPrivate = this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE;
-			if (runnerPrivate) return runnerPrivate;
+
+		// Private or internal target repository
+		const privateRunner = this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE;
+		if (privateRunner) {
+			return privateRunner;
 		}
-		const resolvedRunnerRepo = this.appConfig.RUNNER_REPOSITORY;
-		if (
-			targetVisibility !== 'public' &&
-			targetVisibility !== undefined &&
-			!this.appConfig.RUNNER_REPOSITORY_DISABLE_GUARDRAIL &&
-			!this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE
-		) {
+
+		// No private runner configured: fall back to the public runner when the guardrail is disabled.
+		if (this.appConfig.USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES) {
 			this.log.warn(
-				`No matching runner repository found for private target ${repo.toFullName()}; dispatch blocked by guardrail.`
+				`No private runner configured for ${visibility} target ${repo.toFullName()}; dispatching to the public runner (USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES).`
 			);
-			return null;
+			return this.appConfig.RUNNER_REPOSITORY;
 		}
-		return resolvedRunnerRepo;
+
+		this.log.warn(
+			`No matching runner found for ${visibility} target ${repo.toFullName()}; set RUNNER_REPOSITORY_FOR_PRIVATE, or USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES, to enable checks for ${visibility} repositories.`
+		);
+		return null;
 	}
 
 	/**
@@ -86,15 +88,19 @@ export abstract class BaseHandler<C extends Context = Context> {
 	 * @param repo Repository info with owner and repo name
 	 * @returns true if the repo matches a configured runner repository
 	 */
-	protected isMatchingRunner(repo: Repo): boolean {
-		const runnerRepositories = [this.appConfig.RUNNER_REPOSITORY];
-		if (this.appConfig.RUNNER_REPOSITORY_FOR_PUBLIC) {
-			runnerRepositories.push(this.appConfig.RUNNER_REPOSITORY_FOR_PUBLIC);
+	public isRunnerRepo(repo: Repo): boolean {
+		if (repo.equals(this.appConfig.RUNNER_REPOSITORY)) {
+			return true;
 		}
-		if (this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE) {
-			runnerRepositories.push(this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE);
+
+		if (
+			this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE &&
+			repo.equals(this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE)
+		) {
+			return true;
 		}
-		return runnerRepositories.some((runnerRepo) => runnerRepo.equals(repo));
+
+		return false;
 	}
 
 	/**

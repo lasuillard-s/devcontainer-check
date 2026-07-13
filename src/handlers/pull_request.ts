@@ -32,9 +32,12 @@ export default class PullRequestHandler extends BaseHandler<Context<'pull_reques
 
 		// Get target repository visibility
 		const targetRepoDetail = await this.octokit.rest.repos.get({ ...repo });
-		const targetVisibility = targetRepoDetail.data.visibility;
-		const runnerRepo = this.getRunnerFor(repo, targetVisibility);
+		const visibility = targetRepoDetail.data.visibility ?? 'public';
+		const runnerRepo = this.getRunnerFor(repo, visibility as 'public' | 'private' | 'internal');
 		if (!runnerRepo) {
+			this.log.warn(
+				`Unable to resolve runner repository for ${visibility} target repository ${repo.toFullName()}. Skipping workflow dispatch.`
+			);
 			return;
 		}
 
