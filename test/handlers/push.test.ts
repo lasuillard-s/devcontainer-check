@@ -1,7 +1,7 @@
 import nock from 'nock';
 import { beforeEach, describe, expect, vi } from 'vitest';
 import payload from '../fixtures/push.json' with { type: 'json' };
-import { test } from '../helpers.js';
+import { test as it } from '../helpers.js';
 
 const installationId: number = payload.installation.id;
 const owner = payload.repository.owner.login;
@@ -19,7 +19,7 @@ beforeEach(() => {
 	vi.stubEnv('PUSH_BRANCHES', 'setup-devenv');
 });
 
-test('dispatches a workflow when devcontainer files are changed', async ({ probot }) => {
+it('dispatches a workflow when devcontainer files are changed', async ({ probot }) => {
 	// Arrange
 	const workflowRunUrl = 'https://github.com/acme/devcontainer-check-runner/actions/runs/123';
 	const mock = nock('https://api.github.com')
@@ -84,7 +84,7 @@ test('dispatches a workflow when devcontainer files are changed', async ({ probo
 	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
-test('does not dispatch a workflow when no devcontainer files are changed', async ({ probot }) => {
+it('does not dispatch a workflow when no devcontainer files are changed', async ({ probot }) => {
 	// Arrange
 	const payloadWithoutDevcontainerFiles = structuredClone(payload);
 	// @ts-expect-error Ignore fixture modification
@@ -134,7 +134,7 @@ test('does not dispatch a workflow when no devcontainer files are changed', asyn
 	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
-test('on new branch creations, compare commits with default branch', async ({ probot }) => {
+it('on new branch creations, compare commits with default branch', async ({ probot }) => {
 	// Arrange
 	const newBranchPayload = structuredClone(payload);
 	newBranchPayload.created = true;
@@ -185,7 +185,7 @@ test('on new branch creations, compare commits with default branch', async ({ pr
 	expect(mock.pendingMocks()).toStrictEqual([]);
 });
 
-test('ignore branch deletions', async ({ probot }) => {
+it('ignore branch deletions', async ({ probot }) => {
 	// Arrange
 	const deletedBranchPayload = {
 		...payload,
@@ -208,7 +208,7 @@ test('ignore branch deletions', async ({ probot }) => {
 	]);
 });
 
-test('ignore tag pushes', async ({ probot }) => {
+it('ignore tag pushes', async ({ probot }) => {
 	// Arrange
 	const tagPushPayload = {
 		...payload,
@@ -230,7 +230,7 @@ describe('deduplication when push has associated pull requests', () => {
 		vi.stubEnv('PR_BRANCHES', 'main');
 	});
 
-	test('skips dispatch when push commit is associated with an open PR matching PR_BRANCHES', async ({
+	it('skips dispatch when push commit is associated with an open PR matching PR_BRANCHES', async ({
 		probot
 	}) => {
 		// Arrange
@@ -254,7 +254,7 @@ describe('deduplication when push has associated pull requests', () => {
 			vi.stubEnv('PR_BRANCHES', 'release');
 		});
 
-		test('dispatches a workflow', async ({ probot }) => {
+		it('dispatches a workflow', async ({ probot }) => {
 			// Arrange
 			const workflowRunUrl = 'https://github.com/acme/devcontainer-check-runner/actions/runs/456';
 			const mock = nock('https://api.github.com')
@@ -312,9 +312,7 @@ describe('deduplication when push has associated pull requests', () => {
 	});
 });
 
-test('does not dispatch a workflow when branch does not match PUSH_BRANCHES', async ({
-	probot
-}) => {
+it('does not dispatch a workflow when branch does not match PUSH_BRANCHES', async ({ probot }) => {
 	// Arrange
 	const payloadWithDifferentBranch = structuredClone(payload);
 	payloadWithDifferentBranch.ref = 'refs/heads/feature-branch';
@@ -339,7 +337,7 @@ describe('private repository runner selection', () => {
 			vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', undefined);
 		});
 
-		test('dispatches workflow for public repository', async ({ probot }) => {
+		it('dispatches workflow for public repository', async ({ probot }) => {
 			// Arrange
 			const workflowRunUrl = 'https://github.com/acme/public-runner/actions/runs/123';
 			const mock = nock('https://api.github.com')
@@ -381,7 +379,7 @@ describe('private repository runner selection', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		test('skips workflow for private repository when no private runner is configured', async ({
+		it('skips workflow for private repository when no private runner is configured', async ({
 			probot
 		}) => {
 			// Arrange
@@ -407,7 +405,7 @@ describe('private repository runner selection', () => {
 				vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', 'true');
 			});
 
-			test('dispatches workflow for private repository using the public runner', async ({
+			it('dispatches workflow for private repository using the public runner', async ({
 				probot
 			}) => {
 				// Arrange
@@ -454,7 +452,7 @@ describe('private repository runner selection', () => {
 	});
 
 	describe('repository visibility in push events', () => {
-		test('treats undefined visibility as private/internal and skips when no private runner is configured', async ({
+		it('treats undefined visibility as private/internal and skips when no private runner is configured', async ({
 			probot
 		}) => {
 			// Arrange
@@ -475,7 +473,7 @@ describe('private repository runner selection', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		test('handles compare response with undefined files', async ({ probot }) => {
+		it('handles compare response with undefined files', async ({ probot }) => {
 			// Arrange
 			const mock = nock('https://api.github.com')
 				.post(`/app/installations/${installationId}/access_tokens`)
@@ -517,7 +515,7 @@ describe('private repository runner selection', () => {
 			vi.stubEnv('CHECK_WORKFLOW_REF', 'release-1');
 		});
 
-		test('dispatches workflow using explicit ref without fetching runner default branch', async ({
+		it('dispatches workflow using explicit ref without fetching runner default branch', async ({
 			probot
 		}) => {
 			// Arrange
@@ -581,7 +579,7 @@ describe('private repository runner selection', () => {
 			vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', undefined);
 		});
 
-		test('skips workflow for internal repository when no private runner is configured', async ({
+		it('skips workflow for internal repository when no private runner is configured', async ({
 			probot
 		}) => {
 			// Arrange
@@ -608,7 +606,7 @@ describe('private repository runner selection', () => {
 			vi.stubEnv('CHECK_WORKFLOW_REF', '~DEFAULT_BRANCH');
 		});
 
-		test('creates a failed check run when workflow dispatch throws', async ({ probot }) => {
+		it('creates a failed check run when workflow dispatch throws', async ({ probot }) => {
 			// Arrange
 			const mock = nock('https://api.github.com')
 				.post(`/app/installations/${installationId}/access_tokens`)
@@ -656,7 +654,7 @@ describe('private repository runner selection', () => {
 			vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
 		});
 
-		test('dispatches workflow for private repository using private runner', async ({ probot }) => {
+		it('dispatches workflow for private repository using private runner', async ({ probot }) => {
 			// Arrange
 			const workflowRunUrl = 'https://github.com/acme/private-runner/actions/runs/123';
 			const mock = nock('https://api.github.com')
@@ -698,7 +696,7 @@ describe('private repository runner selection', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		test('dispatches workflow for public repository using default runner', async ({ probot }) => {
+		it('dispatches workflow for public repository using default runner', async ({ probot }) => {
 			// Arrange
 			const workflowRunUrl = 'https://github.com/acme/default-runner/actions/runs/123';
 			const mock = nock('https://api.github.com')

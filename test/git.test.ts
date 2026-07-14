@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { branchNameFromRef, isRefTag } from '../src/git.js';
+import { test as it } from './helpers.js';
 
 describe('isRefTag', () => {
 	it('should return true for tag refs', () => {

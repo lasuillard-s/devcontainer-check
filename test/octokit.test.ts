@@ -1,6 +1,7 @@
 import type { ProbotOctokit } from 'probot';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import { createWorkflowDispatch } from '../src/octokit.js';
+import { test as it } from './helpers.js';
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 function createMockOctokit() {

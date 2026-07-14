@@ -2,7 +2,7 @@ import nock from 'nock';
 import { beforeEach, describe, expect, vi } from 'vitest';
 import openedPayload from '../fixtures/pull_request.opened.json' with { type: 'json' };
 import synchronizePayload from '../fixtures/pull_request.synchronize.json' with { type: 'json' };
-import { test } from '../helpers.js';
+import { test as it } from '../helpers.js';
 
 const runnerRepo = 'acme/devcontainer-check-runner';
 
@@ -21,7 +21,7 @@ describe('pull_request.opened event', () => {
 	const sha = openedPayload.pull_request.head.sha;
 	const number = openedPayload.pull_request.number;
 
-	test('dispatches a workflow when PR base branch matches PR_BRANCHES and devcontainer files are changed', async ({
+	it('dispatches a workflow when PR base branch matches PR_BRANCHES and devcontainer files are changed', async ({
 		probot
 	}) => {
 		// Arrange
@@ -79,9 +79,7 @@ describe('pull_request.opened event', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	test('does not dispatch a workflow when no devcontainer files are changed', async ({
-		probot
-	}) => {
+	it('does not dispatch a workflow when no devcontainer files are changed', async ({ probot }) => {
 		// Arrange
 		const mock = nock('https://api.github.com')
 			.post(`/app/installations/${installationId}/access_tokens`)
@@ -114,7 +112,7 @@ describe('pull_request.opened event', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	test('skips when PR base branch does not match PR_BRANCHES', async ({ probot }) => {
+	it('skips when PR base branch does not match PR_BRANCHES', async ({ probot }) => {
 		// Arrange
 		const payloadWithDifferentBase = structuredClone(openedPayload) as Record<string, unknown>;
 		(payloadWithDifferentBase.pull_request as Record<string, unknown>).base = { ref: 'release' };
@@ -132,7 +130,7 @@ describe('pull_request.opened event', () => {
 	});
 
 	describe('private repository runner selection', () => {
-		test('skips when no private runner is configured and the guardrail is enabled', async ({
+		it('skips when no private runner is configured and the guardrail is enabled', async ({
 			probot
 		}) => {
 			// Arrange
@@ -157,7 +155,7 @@ describe('pull_request.opened event', () => {
 				vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', 'true');
 			});
 
-			test('dispatches to the public runner for private repositories', async ({ probot }) => {
+			it('dispatches to the public runner for private repositories', async ({ probot }) => {
 				// Arrange
 				const workflowRunUrl = 'https://github.com/acme/devcontainer-check-runner/actions/runs/123';
 				const mock = nock('https://api.github.com')
@@ -216,7 +214,7 @@ describe('pull_request.opened event', () => {
 	});
 
 	describe('internal repository visibility in pull requests', () => {
-		test('skips workflow for internal repository when no private runner is configured', async ({
+		it('skips workflow for internal repository when no private runner is configured', async ({
 			probot
 		}) => {
 			// Arrange
@@ -245,7 +243,7 @@ describe('pull_request.synchronize event', () => {
 	const sha = synchronizePayload.pull_request.head.sha;
 	const number = synchronizePayload.pull_request.number;
 
-	test('dispatches workflow on synchronize when devcontainer files changed', async ({ probot }) => {
+	it('dispatches workflow on synchronize when devcontainer files changed', async ({ probot }) => {
 		// Arrange
 		const workflowRunUrl = 'https://github.com/acme/devcontainer-check-runner/actions/runs/123';
 		const mock = nock('https://api.github.com')
@@ -297,7 +295,7 @@ describe('pull_request.synchronize event', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	test('does not dispatch workflow on synchronize when no devcontainer files changed', async ({
+	it('does not dispatch workflow on synchronize when no devcontainer files changed', async ({
 		probot
 	}) => {
 		// Arrange
@@ -333,7 +331,7 @@ describe('pull_request.synchronize event', () => {
 	});
 
 	describe('repository visibility in pull requests', () => {
-		test('treats undefined visibility as private/internal and skips when no private runner is configured', async ({
+		it('treats undefined visibility as private/internal and skips when no private runner is configured', async ({
 			probot
 		}) => {
 			// Arrange

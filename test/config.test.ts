@@ -1,7 +1,7 @@
 import { Probot } from 'probot';
 import { beforeEach, describe, expect, vi } from 'vitest';
 import { DEFAULT_BRANCH_ALIAS, loadConfig } from '../src/config.js';
-import { test } from './helpers.js';
+import { test as it } from './helpers.js';
 
 describe('loadConfig', () => {
 	let probot: Probot;
@@ -14,7 +14,7 @@ describe('loadConfig', () => {
 		} as unknown as Probot;
 	});
 
-	test('loads valid config with reasonable defaults', () => {
+	it('loads valid config with reasonable defaults', () => {
 		// Arrange (required only)
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
 
@@ -31,7 +31,7 @@ describe('loadConfig', () => {
 		});
 	});
 
-	test('loads valid config with explicit configuration values', () => {
+	it('loads valid config with explicit configuration values', () => {
 		// Arrange
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
 		vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
@@ -58,7 +58,7 @@ describe('loadConfig', () => {
 		});
 	});
 
-	test('exits when RUNNER_REPOSITORY format is invalid', () => {
+	it('exits when RUNNER_REPOSITORY format is invalid', () => {
 		// Arrange
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check/extra');
 		const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
@@ -70,19 +70,19 @@ describe('loadConfig', () => {
 		expect(exitSpy).toHaveBeenCalledWith(1);
 	});
 
-	test('rejects empty CHECK_WORKFLOW_NAME', () => {
+	it('rejects empty CHECK_WORKFLOW_NAME', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
 		vi.stubEnv('CHECK_WORKFLOW_NAME', '');
 		expect(() => loadConfig(probot)).toThrow();
 	});
 
-	test('rejects empty CHECK_WORKFLOW_REF', () => {
+	it('rejects empty CHECK_WORKFLOW_REF', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
 		vi.stubEnv('CHECK_WORKFLOW_REF', '');
 		expect(() => loadConfig(probot)).toThrow();
 	});
 
-	test('defaults PUSH_BRANCHES and PR_BRANCHES to empty array when set to empty string', () => {
+	it('defaults PUSH_BRANCHES and PR_BRANCHES to empty array when set to empty string', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
 		vi.stubEnv('PUSH_BRANCHES', '');
 		vi.stubEnv('PR_BRANCHES', '');

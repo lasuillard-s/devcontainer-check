@@ -2,12 +2,12 @@ import AdmZip from 'adm-zip';
 import nock from 'nock';
 import type { Probot, ProbotOctokit } from 'probot';
 import { Context } from 'probot';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, vi } from 'vitest';
 import { loadConfig } from '../../src/config.js';
 import type { WorkflowInputs } from '../../src/handlers/types.js';
 import WorkflowRunCompletedHandler from '../../src/handlers/workflow_run.completed.js';
 import payload from '../fixtures/workflow_run.completed.json' with { type: 'json' };
-import { test } from '../helpers.js';
+import { test as it } from '../helpers.js';
 
 /**
  * Thin subclass that exposes the (protected) artifact-download helper for unit testing.
@@ -50,7 +50,7 @@ beforeEach(() => {
 	vi.stubEnv('CHECK_WORKFLOW_REF', undefined);
 });
 
-test('ignores workflow run from non-runner repository', async ({ probot }) => {
+it('ignores workflow run from non-runner repository', async ({ probot }) => {
 	// Arrange
 	const payloadWithDifferentRepo = structuredClone(payload);
 	payloadWithDifferentRepo.repository.full_name = 'other-org/other-repo';
@@ -68,7 +68,7 @@ test('ignores workflow run from non-runner repository', async ({ probot }) => {
 });
 
 describe('when runner repository matches', () => {
-	test('updates commit status to success when workflow run completes successfully', async ({
+	it('updates commit status to success when workflow run completes successfully', async ({
 		probot
 	}) => {
 		// Arrange
@@ -108,9 +108,7 @@ describe('when runner repository matches', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	test('updates commit status to failure when workflow run does not succeed', async ({
-		probot
-	}) => {
+	it('updates commit status to failure when workflow run does not succeed', async ({ probot }) => {
 		// Arrange
 		const failedPayload = structuredClone(payload);
 		failedPayload.workflow_run.conclusion = 'failure';
@@ -150,7 +148,7 @@ describe('when runner repository matches', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	test('skips status update when workflow inputs artifact is not found', async ({ probot }) => {
+	it('skips status update when workflow inputs artifact is not found', async ({ probot }) => {
 		// Arrange
 		const mock = nock('https://api.github.com')
 			.post(`/app/installations/${installationId}/access_tokens`)
@@ -167,7 +165,7 @@ describe('when runner repository matches', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	test('ignores when workflow path is null', async ({ probot }) => {
+	it('ignores when workflow path is null', async ({ probot }) => {
 		const payloadWithNullPath = structuredClone(payload);
 
 		// @ts-expect-error Ignore fixture modification
@@ -184,7 +182,7 @@ describe('when runner repository matches', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	test('treats null conclusion as failure', async ({ probot }) => {
+	it('treats null conclusion as failure', async ({ probot }) => {
 		const payloadWithNullConclusion = structuredClone(payload);
 
 		// @ts-expect-error Ignore fixture modification

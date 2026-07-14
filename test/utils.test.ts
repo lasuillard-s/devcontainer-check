@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 import { errorToString, matchPatterns } from '../src/utils.js';
+import { test as it } from './helpers.js';
 
 describe('errorToString', () => {
 	it('returns the message for Error instances', () => {
