@@ -40,9 +40,10 @@ on:
         required: true
 
 concurrency:
-  # Single workflow run per repository/SHA
+  # Single workflow run per caller repository/SHA. github.repository refers to
+  # the caller (e.g. a fork), so shared fixtures don't cancel each other's runs.
   group: |-
-    ${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
+    ${{ github.workflow }}|${{ github.repository }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
   cancel-in-progress: true
 
 jobs:

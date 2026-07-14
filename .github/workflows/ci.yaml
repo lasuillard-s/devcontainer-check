@@ -79,7 +79,7 @@ jobs:
           files: coverage/clover.xml
           flags: unit
 
-  # Call the check workflow (devcontainer-check.yaml) to test the workflow
+  # Call the check workflow (devcontainer-check.yaml) to test the workflow.
   call-workflow:
     name: Call Workflow (${{ matrix.name }})
     uses: ./.github/workflows/devcontainer-check.yaml
@@ -88,19 +88,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Fixtures are pinned to the canonical source repository so forks reuse the
+        # same global, controlled dev container configurations instead of their own.
         include:
-          # Branch testing-check-workflow - "No changes"
-          # https://github.com/lasuillard-s/devcontainer-check/commit/c942a49041a8a475268aa7e96b5ec45ea793f5aa
+          # Tag on the source repo (lasuillard-s/devcontainer-check) - "No changes"
           - name: Unchanged
-            sha: c942a49041a8a475268aa7e96b5ec45ea793f5aa
+            sha: fixture/devcontainer-unchanged
 
-          # Branch testing-check-workflow - "Reorder extension"
-          # https://github.com/lasuillard-s/devcontainer-check/commit/8c40efad23184dde392ffdc34d7a406993f24a83
+          # Tag on the source repo (lasuillard-s/devcontainer-check) - "Reorder extension"
           - name: Changed
-            sha: 8c40efad23184dde392ffdc34d7a406993f24a83
+            sha: fixture/devcontainer-changed
 
     with:
-      owner: ${{ github.repository_owner }}
-      repo: ${{ github.event.repository.name }}
+      owner: lasuillard-s
+      repo: devcontainer-check
       sha: ${{ matrix.sha }}
     secrets: inherit
