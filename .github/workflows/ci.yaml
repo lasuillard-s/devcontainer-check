@@ -90,8 +90,8 @@ jobs:
         sha:
           # Branch testing-check-workflow - "No changes"
           - c942a49041a8a475268aa7e96b5ec45ea793f5aa
-          # Branch testing-check-workflow - "Add trailing comma to `devcontainer.json`"
-          - 0d1e88287a0aa8f6e8596086c15cef7bc3cf87a4
+          # Branch testing-check-workflow - "Reorder extension"
+          - 8c40efad23184dde392ffdc34d7a406993f24a83
     with:
       owner: ${{ github.repository_owner }}
       repo: ${{ github.event.repository.name }}
