@@ -5,7 +5,9 @@
 
 A GitHub App that automates validation of your repository's Dev Container.
 
-![Demo](docs/demo.png)
+<p align="center">
+  <img src="docs/demo.png" />
+</p>
 
 ## ✨ Features
 
