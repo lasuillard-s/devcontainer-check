@@ -39,12 +39,6 @@ on:
         type: string
         required: true
 
-    secrets:
-      DEVCONTAINER_CHECK_PRIVATE_KEY:
-        required: true
-      DEVCONTAINER_CHECK_APP_ID:
-        required: true
-
 concurrency:
   # Single workflow run per repository/SHA
   group: |-
