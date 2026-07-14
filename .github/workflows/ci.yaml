@@ -79,19 +79,24 @@ jobs:
           files: coverage/clover.xml
           flags: unit
 
-  run-check-workflow:
-    name: Run Check Workflow
+  # Call the check workflow (devcontainer-check.yaml) to test the workflow
+  call-workflow:
+    name: Call Workflow (${{ matrix.name }})
     uses: ./.github/workflows/devcontainer-check.yaml
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        sha:
+        include:
           # Branch testing-check-workflow - "No changes"
-          - c942a49041a8a475268aa7e96b5ec45ea793f5aa
-          # Branch testing-check-workflow - "Reorder extension"
-          - 8c40efad23184dde392ffdc34d7a406993f24a83
+          - name: Unchanged
+            sha: c942a49041a8a475268aa7e96b5ec45ea793f5aa
+
+            # Branch testing-check-workflow - "Reorder extension"
+          - name: Changed
+            sha: 8c40efad23184dde392ffdc34d7a406993f24a83
+
     with:
       owner: ${{ github.repository_owner }}
       repo: ${{ github.event.repository.name }}
