@@ -62,7 +62,7 @@ export abstract class BaseHandler<C extends Context = Context> {
 		const publicRunner = this.appConfig.RUNNER_REPOSITORY;
 		if (visibility === 'public') {
 			this.log.debug(
-				`Resolved to public runner for ${publicRunner} target ${repo.toFullName()} (${visibility})`
+				`Resolved to public runner ${publicRunner.toFullName()} for target ${repo.toFullName()} (${visibility})`
 			);
 			return publicRunner;
 		}
