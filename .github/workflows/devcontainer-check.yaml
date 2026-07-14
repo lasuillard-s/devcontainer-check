@@ -21,6 +21,30 @@ on:
         type: string
         required: true
 
+  # Use by other workflows to test the workflow
+  workflow_call:
+    inputs:
+      owner:
+        description: Owner of the repository to check dev container configuration for
+        type: string
+        required: true
+
+      repo:
+        description: Repository to check dev container configuration for
+        type: string
+        required: true
+
+      sha:
+        description: Commit SHA to check
+        type: string
+        required: true
+
+    secrets:
+      DEVCONTAINER_CHECK_PRIVATE_KEY:
+        required: true
+      DEVCONTAINER_CHECK_APP_ID:
+        required: true
+
 concurrency:
   # Single workflow run per repository/SHA
   group: |-
@@ -62,6 +86,7 @@ jobs:
 
       - name: Get application token
         id: get-token
+        if: ${{ github.event.name == 'workflow_dispatch' }}
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           private-key: ${{ secrets.DEVCONTAINER_CHECK_PRIVATE_KEY || secrets.PRIVATE_KEY }}
@@ -75,7 +100,7 @@ jobs:
         with:
           repository: ${{ inputs.owner }}/${{ inputs.repo }}
           ref: ${{ inputs.sha }}
-          token: ${{ steps.get-token.outputs.token }}
+          token: ${{ steps.get-token.outputs.token || '' }}
           fetch-depth: 1 # Only fetch the latest commit to speed up the workflow
 
       # Resolve which dev container configuration to use

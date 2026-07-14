@@ -78,3 +78,25 @@ jobs:
           fail_ci_if_error: false
           files: coverage/clover.xml
           flags: unit
+
+  run-check-workflow:
+    name: Run Check Workflow
+    # Only run on pushes to the default branch or manual dispatch. Fork PRs arrive as
+    # `pull_request` events, so they are excluded here and never need the App secrets.
+    if: >-
+      github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/devcontainer-check.yaml
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        sha:
+          # Branch testing-check-workflow - "No changes"
+          - c942a49041a8a475268aa7e96b5ec45ea793f5aa
+          # Branch testing-check-workflow - "Add trailing comma to `devcontainer.json`"
+          - 0d1e88287a0aa8f6e8596086c15cef7bc3cf87a4
+    with:
+      owner: ${{ github.repository_owner }}
+      repo: ${{ github.event.repository.name }}
+      sha: ${{ matrix.sha }}
+    secrets: inherit
