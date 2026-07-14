@@ -59,7 +59,8 @@ export default class PushHandler extends BaseHandler<Context<'push'>> {
 		// Deduplication: if this commit is associated with an open PR that will be handled by the pull_request handler, skip it.
 		const { data: pullRequests } =
 			await this.octokit.rest.repos.listPullRequestsAssociatedWithCommit({
-				...repo,
+				owner: repo.owner,
+				repo: repo.repo,
 				commit_sha: sha
 			});
 		const relatedPR = pullRequests.find((pr) => {
@@ -78,7 +79,10 @@ export default class PushHandler extends BaseHandler<Context<'push'>> {
 		}
 
 		// Get target repository visibility before comparing commits (optimization: skip compare if guardrail blocks)
-		const targetRepoDetail = await this.octokit.rest.repos.get({ ...repo });
+		const targetRepoDetail = await this.octokit.rest.repos.get({
+			owner: repo.owner,
+			repo: repo.repo
+		});
 		const visibility = targetRepoDetail.data.visibility ?? 'private';
 		const runnerRepo = this.getRunnerFor(repo, visibility as 'public' | 'private' | 'internal');
 		if (!runnerRepo) {
@@ -98,7 +102,8 @@ export default class PushHandler extends BaseHandler<Context<'push'>> {
 		if (!isDevContainerFileChanged(changedFiles)) {
 			this.log.debug('No devcontainer-related file changes detected. Skipping workflow dispatch.');
 			await this.octokit.rest.checks.create({
-				...repo,
+				owner: repo.owner,
+				repo: repo.repo,
 				head_sha: sha,
 				name: CHECK_RUN_NAME,
 				status: 'completed',
@@ -126,7 +131,8 @@ export default class PushHandler extends BaseHandler<Context<'push'>> {
 		for await (const response of this.octokit.paginate.iterator(
 			this.octokit.rest.repos.compareCommitsWithBasehead,
 			{
-				...repo,
+				owner: repo.owner,
+				repo: repo.repo,
 				basehead
 			}
 		)) {

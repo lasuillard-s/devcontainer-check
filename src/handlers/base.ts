@@ -122,13 +122,14 @@ export abstract class BaseHandler<C extends Context = Context> {
 		let runnerRef = resolvedRunnerRefRaw;
 		if (runnerRef === DEFAULT_BRANCH_ALIAS) {
 			const { data: runnerRepoDetail } = await this.octokit.rest.repos.get({
-				...runnerRepo
+				owner: runnerRepo.owner,
+				repo: runnerRepo.repo
 			});
 			runnerRef = runnerRepoDetail.default_branch;
 		}
 		this.log.debug(`Resolved runner ref: ${runnerRef}`);
 
-		const inputs: WorkflowInputs = { ...repo, sha };
+		const inputs: WorkflowInputs = { owner: repo.owner, repo: repo.repo, sha };
 		this.log.info(
 			`Triggering workflow ${this.appConfig.CHECK_WORKFLOW_NAME} in ${runnerRepo.toFullName()}@${runnerRef}` +
 				` with inputs: ${JSON.stringify(inputs)}`
@@ -138,7 +139,8 @@ export abstract class BaseHandler<C extends Context = Context> {
 		let workflowRunUrl: string | undefined;
 		try {
 			const workflowDispatchResult = await createWorkflowDispatch(this.octokit, {
-				...runnerRepo,
+				owner: runnerRepo.owner,
+				repo: runnerRepo.repo,
 				workflow_id: this.appConfig.CHECK_WORKFLOW_NAME,
 				ref: runnerRef,
 				inputs: inputs as unknown as Record<string, unknown>,
@@ -148,7 +150,8 @@ export abstract class BaseHandler<C extends Context = Context> {
 		} catch (error) {
 			this.log.error(`Failed to dispatch workflow: ${errorToString(error)}`);
 			await this.octokit.rest.checks.create({
-				...repo,
+				owner: repo.owner,
+				repo: repo.repo,
 				head_sha: sha,
 				name: CHECK_RUN_NAME,
 				status: 'completed',
@@ -163,7 +166,8 @@ export abstract class BaseHandler<C extends Context = Context> {
 
 		// Create a check run in progress with a link to the workflow run
 		await this.octokit.rest.checks.create({
-			...repo,
+			owner: repo.owner,
+			repo: repo.repo,
 			head_sha: sha,
 			name: CHECK_RUN_NAME,
 			status: 'in_progress',

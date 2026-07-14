@@ -31,7 +31,10 @@ export default class PullRequestHandler extends BaseHandler<Context<'pull_reques
 		}
 
 		// Get target repository visibility
-		const targetRepoDetail = await this.octokit.rest.repos.get({ ...repo });
+		const targetRepoDetail = await this.octokit.rest.repos.get({
+			owner: repo.owner,
+			repo: repo.repo
+		});
 		const visibility = targetRepoDetail.data.visibility ?? 'private';
 		const runnerRepo = this.getRunnerFor(repo, visibility as 'public' | 'private' | 'internal');
 		if (!runnerRepo) {
@@ -48,7 +51,8 @@ export default class PullRequestHandler extends BaseHandler<Context<'pull_reques
 		if (!isDevContainerFileChanged(files)) {
 			this.log.debug('No devcontainer-related file changes detected. Skipping workflow dispatch.');
 			await this.octokit.rest.checks.create({
-				...repo,
+				owner: repo.owner,
+				repo: repo.repo,
 				head_sha: sha,
 				name: CHECK_RUN_NAME,
 				status: 'completed',
@@ -74,7 +78,8 @@ export default class PullRequestHandler extends BaseHandler<Context<'pull_reques
 	private async getChangedFiles(repo: Repo, pullNumber: number): Promise<string[]> {
 		const files: string[] = [];
 		for await (const response of this.octokit.paginate.iterator(this.octokit.rest.pulls.listFiles, {
-			...repo,
+			owner: repo.owner,
+			repo: repo.repo,
 			pull_number: pullNumber
 		})) {
 			files.push(...response.data.map((f) => f.filename));

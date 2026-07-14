@@ -48,7 +48,8 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 		const targetRepo = new Repo(inputs.owner, inputs.repo);
 		const state = payload.workflow_run.conclusion === 'success' ? 'success' : 'failure';
 		await this.octokit.rest.checks.create({
-			...targetRepo,
+			owner: targetRepo.owner,
+			repo: targetRepo.repo,
 			head_sha: inputs.sha,
 			name: CHECK_RUN_NAME,
 			status: 'completed',
@@ -75,7 +76,8 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 	 */
 	private async fetchInputs(repo: Repo, workflowRunId: number): Promise<WorkflowInputs | null> {
 		const inputs = await this.downloadArtifactFileJSON<WorkflowInputs>({
-			...repo,
+			owner: repo.owner,
+			repo: repo.repo,
 			workflowRunId,
 			artifactName: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME,
 			filePath: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH
