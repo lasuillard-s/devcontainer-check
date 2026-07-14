@@ -4,6 +4,7 @@ import { Context } from 'probot';
 import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
 import { createWorkflowDispatch } from '../octokit.js';
 import { Repo } from '../types.js';
+import { errorToString } from '../utils.js';
 import type { WorkflowInputs } from './types.js';
 
 export const CHECK_RUN_NAME = 'Dev Container Check';
@@ -34,7 +35,6 @@ export abstract class BaseHandler<C extends Context = Context> {
 
 	/**
 	 * Handle the webhook event. Implemented by concrete handler subclasses.
-	 * @returns Promise that resolves when the event has been handled
 	 */
 	abstract handle(): Promise<void>;
 
@@ -59,26 +59,33 @@ export abstract class BaseHandler<C extends Context = Context> {
 	 * @returns The resolved runner repository, or null if no runner is configured for the target
 	 */
 	public getRunnerFor(repo: Repo, visibility: 'public' | 'private' | 'internal'): Repo | null {
+		const publicRunner = this.appConfig.RUNNER_REPOSITORY;
 		if (visibility === 'public') {
-			return this.appConfig.RUNNER_REPOSITORY;
+			this.log.debug(
+				`Resolved to public runner for ${publicRunner} target ${repo.toFullName()} (${visibility})`
+			);
+			return publicRunner;
 		}
 
 		// Private or internal target repository
 		const privateRunner = this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE;
 		if (privateRunner) {
+			this.log.debug(
+				`Resolved to private runner ${privateRunner.toFullName()} for target ${repo.toFullName()} (${visibility})`
+			);
 			return privateRunner;
 		}
 
 		// No private runner configured: fall back to the public runner when the guardrail is disabled.
 		if (this.appConfig.USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES) {
 			this.log.warn(
-				`No private runner configured for ${visibility} target ${repo.toFullName()}; dispatching to the public runner (USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES).`
+				`No private runner configured for target ${repo.toFullName()} (${visibility}); dispatching to the public runner (USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES).`
 			);
 			return this.appConfig.RUNNER_REPOSITORY;
 		}
 
 		this.log.warn(
-			`No matching runner found for ${visibility} target ${repo.toFullName()}; set RUNNER_REPOSITORY_FOR_PRIVATE, or USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES, to enable checks for ${visibility} repositories.`
+			`No matching runner found for target ${repo.toFullName()} (${visibility}); set RUNNER_REPOSITORY_FOR_PRIVATE, or USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES, to enable checks for ${visibility} repositories.`
 		);
 		return null;
 	}
@@ -121,20 +128,38 @@ export abstract class BaseHandler<C extends Context = Context> {
 		}
 		this.log.debug(`Resolved runner ref: ${runnerRef}`);
 
-		// Dispatch check workflow
 		const inputs: WorkflowInputs = { ...repo, sha };
 		this.log.info(
 			`Triggering workflow ${this.appConfig.CHECK_WORKFLOW_NAME} in ${runnerRepo.toFullName()}@${runnerRef}` +
 				` with inputs: ${JSON.stringify(inputs)}`
 		);
-		const workflowDispatchResult = await createWorkflowDispatch(this.octokit, {
-			...runnerRepo,
-			workflow_id: this.appConfig.CHECK_WORKFLOW_NAME,
-			ref: runnerRef,
-			inputs: inputs as unknown as Record<string, unknown>,
-			return_run_details: true
-		});
-		const workflowRunUrl = workflowDispatchResult?.html_url;
+
+		// Dispatch the workflow
+		let workflowRunUrl: string | undefined;
+		try {
+			const workflowDispatchResult = await createWorkflowDispatch(this.octokit, {
+				...runnerRepo,
+				workflow_id: this.appConfig.CHECK_WORKFLOW_NAME,
+				ref: runnerRef,
+				inputs: inputs as unknown as Record<string, unknown>,
+				return_run_details: true
+			});
+			workflowRunUrl = workflowDispatchResult?.html_url;
+		} catch (error) {
+			this.log.error(`Failed to dispatch workflow: ${errorToString(error)}`);
+			await this.octokit.rest.checks.create({
+				...repo,
+				head_sha: sha,
+				name: CHECK_RUN_NAME,
+				status: 'completed',
+				conclusion: 'failure',
+				output: {
+					title: 'Dev container configuration check failed to start.',
+					summary: `Failed to dispatch the validation workflow: ${errorToString(error)}`
+				}
+			});
+			return;
+		}
 
 		// Create a check run in progress with a link to the workflow run
 		await this.octokit.rest.checks.create({

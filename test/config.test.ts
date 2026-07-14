@@ -58,7 +58,7 @@ describe('loadConfig', () => {
 		});
 	});
 
-	test('logs and exits when RUNNER_REPOSITORY format is invalid', () => {
+	test('exits when RUNNER_REPOSITORY format is invalid', () => {
 		// Arrange
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check/extra');
 		const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
@@ -68,5 +68,26 @@ describe('loadConfig', () => {
 		// Act & Assert
 		expect(() => loadConfig(probot)).toThrow('process.exit called');
 		expect(exitSpy).toHaveBeenCalledWith(1);
+	});
+
+	test('rejects empty CHECK_WORKFLOW_NAME', () => {
+		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
+		vi.stubEnv('CHECK_WORKFLOW_NAME', '');
+		expect(() => loadConfig(probot)).toThrow();
+	});
+
+	test('rejects empty CHECK_WORKFLOW_REF', () => {
+		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
+		vi.stubEnv('CHECK_WORKFLOW_REF', '');
+		expect(() => loadConfig(probot)).toThrow();
+	});
+
+	test('defaults PUSH_BRANCHES and PR_BRANCHES to empty array when set to empty string', () => {
+		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
+		vi.stubEnv('PUSH_BRANCHES', '');
+		vi.stubEnv('PR_BRANCHES', '');
+		const config = loadConfig(probot);
+		expect(config.PUSH_BRANCHES).toStrictEqual([]);
+		expect(config.PR_BRANCHES).toStrictEqual([]);
 	});
 });

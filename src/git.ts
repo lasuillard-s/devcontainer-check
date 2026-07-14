@@ -14,7 +14,8 @@ export function isRefTag(ref: string): boolean {
  */
 export function branchNameFromRef(ref: string): string | null {
 	if (ref.startsWith('refs/heads/')) {
-		return ref.replace('refs/heads/', '');
+		const branchName = ref.replace('refs/heads/', '');
+		return branchName ? branchName : null;
 	}
 	return null;
 }

@@ -10,14 +10,6 @@ export class Repo {
 	) {}
 
 	/**
-	 * Returns the `owner/repo` full name of the repository.
-	 * @returns The full name in `owner/repo` format
-	 */
-	toFullName(): string {
-		return `${this.owner}/${this.repo}`;
-	}
-
-	/**
 	 * Parses a repository full name in `owner/repo` format into a Repo.
 	 * @param fullName Repository full name
 	 * @returns The parsed Repo
@@ -35,6 +27,14 @@ export class Repo {
 	static fromContext(context: ContextRepoProvider): Repo {
 		const { owner, repo } = context.repo();
 		return new Repo(owner, repo);
+	}
+
+	/**
+	 * Returns the `owner/repo` full name of the repository.
+	 * @returns The full name in `owner/repo` format
+	 */
+	toFullName(): string {
+		return `${this.owner}/${this.repo}`;
 	}
 
 	/**

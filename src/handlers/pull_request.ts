@@ -32,7 +32,7 @@ export default class PullRequestHandler extends BaseHandler<Context<'pull_reques
 
 		// Get target repository visibility
 		const targetRepoDetail = await this.octokit.rest.repos.get({ ...repo });
-		const visibility = targetRepoDetail.data.visibility ?? 'public';
+		const visibility = targetRepoDetail.data.visibility ?? 'private';
 		const runnerRepo = this.getRunnerFor(repo, visibility as 'public' | 'private' | 'internal');
 		if (!runnerRepo) {
 			this.log.warn(

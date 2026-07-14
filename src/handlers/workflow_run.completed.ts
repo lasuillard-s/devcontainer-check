@@ -107,29 +107,43 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 		const { owner, repo, workflowRunId, artifactName, filePath } = params;
 
 		// List artifacts for the workflow run and find the one with the specified name
-		const allArtifacts = await this.octokit.rest.actions.listWorkflowRunArtifacts({
-			owner,
-			repo,
-			run_id: workflowRunId
-		});
+		let allArtifacts: { data: { artifacts: { id: number; name: string }[] } };
+		try {
+			const response = await this.octokit.rest.actions.listWorkflowRunArtifacts({
+				owner,
+				repo,
+				run_id: workflowRunId
+			});
+			allArtifacts = response;
+		} catch (error) {
+			this.log.error(`Failed to list workflow run artifacts: ${errorToString(error)}`);
+			return null;
+		}
 		const artifact = allArtifacts.data.artifacts.find((a) => a.name === artifactName);
 		if (!artifact) {
 			return null;
 		}
 
 		// Download and extract the artifact to get the workflow inputs
-		const { data } = (await this.octokit.rest.actions.downloadArtifact({
-			owner,
-			repo,
-			artifact_id: artifact.id,
-			archive_format: 'zip',
-			request: {
-				redirect: 'follow'
-			}
-		})) as unknown as { data: ArrayBuffer };
+		let downloadResponse: { data: ArrayBuffer };
+		try {
+			const response = await this.octokit.rest.actions.downloadArtifact({
+				owner,
+				repo,
+				artifact_id: artifact.id,
+				archive_format: 'zip',
+				request: {
+					redirect: 'follow'
+				}
+			});
+			downloadResponse = response as unknown as { data: ArrayBuffer };
+		} catch (error) {
+			this.log.error(`Failed to download artifact: ${errorToString(error)}`);
+			return null;
+		}
 
 		// Find the specified file in the artifact zip and parse its content as JSON
-		const buffer = Buffer.from(data);
+		const buffer = Buffer.from(downloadResponse.data);
 		const zip = new AdmZip(buffer);
 		const file = zip.getEntries().find((entry) => entry.entryName === filePath);
 		if (!file) {
