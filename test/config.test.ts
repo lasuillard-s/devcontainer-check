@@ -1,7 +1,7 @@
 import { Probot } from 'probot';
 import { beforeEach, describe, expect, vi } from 'vitest';
 import { DEFAULT_BRANCH_ALIAS, loadConfig } from '../src/config.js';
-import { test } from './helpers.js';
+import { test as it } from './helpers.js';
 
 describe('loadConfig', () => {
 	let probot: Probot;
@@ -14,7 +14,7 @@ describe('loadConfig', () => {
 		} as unknown as Probot;
 	});
 
-	test('loads valid config and applies defaults', () => {
+	it('loads valid config with reasonable defaults', () => {
 		// Arrange (required only)
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
 
@@ -29,32 +29,26 @@ describe('loadConfig', () => {
 			PUSH_BRANCHES: [DEFAULT_BRANCH_ALIAS],
 			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS]
 		});
-		expect(config.RUNNER_REPOSITORY_DISABLE_GUARDRAIL).toBeUndefined();
-		expect(config.resolveRunnerRepository('public')).toStrictEqual({
-			owner: 'acme',
-			repo: 'devcontainer-check-runner'
-		});
-		expect(config.resolveRunnerRepository('private')).toStrictEqual({
-			owner: 'acme',
-			repo: 'devcontainer-check-runner'
-		});
 	});
 
-	test('loads valid config with explicit configuration values', () => {
+	it('loads valid config with explicit configuration values', () => {
 		// Arrange
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
+		vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
+		vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', 'false');
 		vi.stubEnv('CHECK_WORKFLOW_NAME', 'custom-check.yaml');
 		vi.stubEnv('CHECK_WORKFLOW_REF', 'release-1');
 		vi.stubEnv('CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME', 'my-workflow-inputs');
 		vi.stubEnv('CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH', 'my-inputs.json');
 		vi.stubEnv('PUSH_BRANCHES', 'main,develop');
 		vi.stubEnv('PR_BRANCHES', 'feature/*');
-		vi.stubEnv('RUNNER_REPOSITORY_DISABLE_GUARDRAIL', 'true');
 
 		// Act & Assert
 		const config = loadConfig(probot);
 		expect(config).toMatchObject({
 			RUNNER_REPOSITORY: { owner: 'acme', repo: 'devcontainer-check-runner' },
+			RUNNER_REPOSITORY_FOR_PRIVATE: { owner: 'acme', repo: 'private-runner' },
+			USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES: false,
 			CHECK_WORKFLOW_NAME: 'custom-check.yaml',
 			CHECK_WORKFLOW_REF: 'release-1',
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'my-workflow-inputs',
@@ -62,10 +56,9 @@ describe('loadConfig', () => {
 			PUSH_BRANCHES: ['main', 'develop'],
 			PR_BRANCHES: ['feature/*']
 		});
-		expect(config.RUNNER_REPOSITORY_DISABLE_GUARDRAIL).toBe(true);
 	});
 
-	test('logs and exits when RUNNER_REPOSITORY format is invalid', () => {
+	it('exits when RUNNER_REPOSITORY format is invalid', () => {
 		// Arrange
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check/extra');
 		const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
@@ -77,51 +70,24 @@ describe('loadConfig', () => {
 		expect(exitSpy).toHaveBeenCalledWith(1);
 	});
 
-	test('resolves public runner repository for public target repos, falls back for private', () => {
+	it('rejects empty CHECK_WORKFLOW_NAME', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
-		vi.stubEnv('RUNNER_REPOSITORY_FOR_PUBLIC', 'acme/public-runner');
-
-		const config = loadConfig(probot);
-		// Public target uses public runner
-		expect(config.resolveRunnerRepository('public')).toStrictEqual({
-			owner: 'acme',
-			repo: 'public-runner'
-		});
-		// Private target falls back to default runner
-		expect(config.resolveRunnerRepository('private')).toStrictEqual({
-			owner: 'acme',
-			repo: 'runner'
-		});
+		vi.stubEnv('CHECK_WORKFLOW_NAME', '');
+		expect(() => loadConfig(probot)).toThrow();
 	});
 
-	test('resolves private runner repository for private target repos, falls back for public', () => {
+	it('rejects empty CHECK_WORKFLOW_REF', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
-		vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', 'acme/private-runner');
-
-		const config = loadConfig(probot);
-		// Private target uses private runner
-		expect(config.resolveRunnerRepository('private')).toStrictEqual({
-			owner: 'acme',
-			repo: 'private-runner'
-		});
-		// Public target falls back to default runner
-		expect(config.resolveRunnerRepository('public')).toStrictEqual({
-			owner: 'acme',
-			repo: 'runner'
-		});
+		vi.stubEnv('CHECK_WORKFLOW_REF', '');
+		expect(() => loadConfig(probot)).toThrow();
 	});
 
-	test('falls back to RUNNER_REPOSITORY when visibility-specific runner is not configured', () => {
+	it('defaults PUSH_BRANCHES and PR_BRANCHES to empty array when set to empty string', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
-
+		vi.stubEnv('PUSH_BRANCHES', '');
+		vi.stubEnv('PR_BRANCHES', '');
 		const config = loadConfig(probot);
-		expect(config.resolveRunnerRepository('private')).toStrictEqual({
-			owner: 'acme',
-			repo: 'runner'
-		});
-		expect(config.resolveRunnerRepository('public')).toStrictEqual({
-			owner: 'acme',
-			repo: 'runner'
-		});
+		expect(config.PUSH_BRANCHES).toStrictEqual([]);
+		expect(config.PR_BRANCHES).toStrictEqual([]);
 	});
 });
