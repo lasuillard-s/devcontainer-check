@@ -6,21 +6,28 @@ import { beforeEach, describe, expect, vi } from 'vitest';
 import { loadConfig } from '../../src/config.js';
 import type { WorkflowInputs } from '../../src/handlers/types.js';
 import WorkflowRunCompletedHandler from '../../src/handlers/workflow_run.completed.js';
+import { Repo } from '../../src/types.js';
 import payload from '../fixtures/workflow_run.completed.json' with { type: 'json' };
 import { test as it } from '../helpers.js';
 
 /**
- * Thin subclass that exposes the (protected) artifact-download helper for unit testing.
+ * Thin subclass that exposes the (protected) artifact-download helpers for unit testing.
  */
 class TestableHandler extends WorkflowRunCompletedHandler {
-	download<ParseAs>(params: {
-		owner: string;
-		repo: string;
+	public async findArtifactByName(params: {
+		repo: Repo;
 		workflowRunId: number;
 		artifactName: string;
+	}): Promise<number | null> {
+		return super.findArtifactByName(params);
+	}
+
+	public async downloadArtifactFile(params: {
+		repo: Repo;
+		artifactId: number;
 		filePath: string;
-	}): Promise<ParseAs | null> {
-		return this.downloadArtifactFileJSON<ParseAs>(params);
+	}): Promise<Buffer | null> {
+		return super.downloadArtifactFile(params);
 	}
 }
 
@@ -225,166 +232,21 @@ describe('when runner repository matches', () => {
 	});
 });
 
-// eslint-disable-next-line jsdoc/require-jsdoc
-function createMockOctokit() {
-	return {
-		rest: {
-			actions: {
-				listWorkflowRunArtifacts: vi.fn(),
-				downloadArtifact: vi.fn()
-			}
-		}
-	} as unknown as ProbotOctokit;
-}
-
-describe('WorkflowRunCompletedHandler.downloadArtifactFileJSON', () => {
-	it('returns null when matching artifact does not exist', async () => {
-		// Arrange
+describe('WorkflowRunCompletedHandler.fetchInputs', () => {
+	it('returns null when findArtifactByName returns null', async () => {
 		const octokit = createMockOctokit();
 		vi.mocked(octokit.rest.actions.listWorkflowRunArtifacts).mockResolvedValue({
 			data: { artifacts: [] }
 		} as never);
 		const handler = createHandler(octokit);
 
-		// Act
-		const result = await handler.download<{ owner: string }>({
-			owner: 'example-org',
-			repo: 'runner-repo',
-			workflowRunId: 123456789,
-			artifactName: 'workflow-inputs',
-			filePath: 'inputs.json'
-		});
+		const result = await handler['fetchInputs']({ owner: 'owner', repo: 'repo' } as Repo, 123);
 
-		// Assert
 		expect(result).toBeNull();
 		expect(octokit.rest.actions.downloadArtifact).not.toHaveBeenCalled();
 	});
 
-	it('returns null when requested file is not present in artifact zip', async () => {
-		// Arrange
-		const octokit = createMockOctokit();
-		vi.mocked(octokit.rest.actions.listWorkflowRunArtifacts).mockResolvedValue({
-			data: {
-				artifacts: [{ id: 42, name: 'workflow-inputs' }]
-			}
-		} as never);
-		const zip = new AdmZip();
-		zip.addFile('different-file.json', Buffer.from('{"ok":true}'));
-		vi.mocked(octokit.rest.actions.downloadArtifact).mockResolvedValue({
-			data: zip.toBuffer()
-		} as never);
-		const handler = createHandler(octokit);
-
-		// Act
-		const result = await handler.download<{ owner: string }>({
-			owner: 'example-org',
-			repo: 'runner-repo',
-			workflowRunId: 123456789,
-			artifactName: 'workflow-inputs',
-			filePath: 'inputs.json'
-		});
-
-		// Assert
-		expect(result).toBeNull();
-	});
-
-	it('parses and returns JSON from requested file in artifact zip', async () => {
-		// Arrange
-		const octokit = createMockOctokit();
-		vi.mocked(octokit.rest.actions.listWorkflowRunArtifacts).mockResolvedValue({
-			data: {
-				artifacts: [{ id: 42, name: 'workflow-inputs' }]
-			}
-		} as never);
-		const zip = new AdmZip();
-		zip.addFile(
-			'inputs.json',
-			Buffer.from(JSON.stringify({ owner: 'target-org', repo: 'target-repo', ref: 'deadbeef' }))
-		);
-		vi.mocked(octokit.rest.actions.downloadArtifact).mockResolvedValue({
-			data: zip.toBuffer()
-		} as never);
-		const handler = createHandler(octokit);
-
-		// Act
-		const result = await handler.download<{
-			owner: string;
-			repo: string;
-			ref: string;
-		}>({
-			owner: 'example-org',
-			repo: 'runner-repo',
-			workflowRunId: 123456789,
-			artifactName: 'workflow-inputs',
-			filePath: 'inputs.json'
-		});
-
-		// Assert
-		expect(result).toStrictEqual({
-			owner: 'target-org',
-			repo: 'target-repo',
-			ref: 'deadbeef'
-		});
-	});
-
-	it('parses and returns JSON from requested file in subdirectory of artifact zip', async () => {
-		// Arrange
-		const octokit = createMockOctokit();
-		vi.mocked(octokit.rest.actions.listWorkflowRunArtifacts).mockResolvedValue({
-			data: {
-				artifacts: [{ id: 42, name: 'workflow-inputs' }]
-			}
-		} as never);
-		const zip = new AdmZip();
-		zip.addFile(
-			'subdirectory/inputs.json',
-			Buffer.from(JSON.stringify({ owner: 'target-org', repo: 'target-repo', ref: 'deadbeef' }))
-		);
-		vi.mocked(octokit.rest.actions.downloadArtifact).mockResolvedValue({
-			data: zip.toBuffer()
-		} as never);
-		const handler = createHandler(octokit);
-
-		// Act
-		const result = await handler.download<{
-			owner: string;
-			repo: string;
-			ref: string;
-		}>({
-			owner: 'example-org',
-			repo: 'runner-repo',
-			workflowRunId: 123456789,
-			artifactName: 'workflow-inputs',
-			filePath: 'subdirectory/inputs.json'
-		});
-
-		// Assert
-		expect(result).toStrictEqual({
-			owner: 'target-org',
-			repo: 'target-repo',
-			ref: 'deadbeef'
-		});
-	});
-
-	it('returns null when listWorkflowRunArtifacts throws', async () => {
-		const octokit = createMockOctokit();
-		vi.mocked(octokit.rest.actions.listWorkflowRunArtifacts).mockRejectedValue(
-			new Error('network error')
-		);
-		const handler = createHandler(octokit);
-
-		const result = await handler.download<{ owner: string }>({
-			owner: 'example-org',
-			repo: 'runner-repo',
-			workflowRunId: 123456789,
-			artifactName: 'workflow-inputs',
-			filePath: 'inputs.json'
-		});
-
-		expect(result).toBeNull();
-	});
-
-	it('returns null when downloadArtifact throws', async () => {
+	it('returns null when downloadArtifactFile returns null', async () => {
 		const octokit = createMockOctokit();
 		vi.mocked(octokit.rest.actions.listWorkflowRunArtifacts).mockResolvedValue({
 			data: { artifacts: [{ id: 42, name: 'workflow-inputs' }] }
@@ -394,13 +256,7 @@ describe('WorkflowRunCompletedHandler.downloadArtifactFileJSON', () => {
 		);
 		const handler = createHandler(octokit);
 
-		const result = await handler.download<{ owner: string }>({
-			owner: 'example-org',
-			repo: 'runner-repo',
-			workflowRunId: 123456789,
-			artifactName: 'workflow-inputs',
-			filePath: 'inputs.json'
-		});
+		const result = await handler['fetchInputs']({ owner: 'owner', repo: 'repo' } as Repo, 123);
 
 		expect(result).toBeNull();
 	});
@@ -418,13 +274,130 @@ describe('WorkflowRunCompletedHandler.downloadArtifactFileJSON', () => {
 		const handler = createHandler(octokit);
 
 		await expect(
-			handler.download<{ owner: string }>({
-				owner: 'example-org',
-				repo: 'runner-repo',
-				workflowRunId: 123456789,
-				artifactName: 'workflow-inputs',
-				filePath: 'inputs.json'
-			})
-		).rejects.toThrow('Failed to parse JSON content from artifact file');
+			handler['fetchInputs']({ owner: 'owner', repo: 'repo' } as Repo, 123)
+		).rejects.toThrow('Failed to parse workflow inputs from artifact file');
+	});
+});
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+function createMockOctokit() {
+	return {
+		rest: {
+			actions: {
+				listWorkflowRunArtifacts: vi.fn(),
+				downloadArtifact: vi.fn()
+			}
+		}
+	} as unknown as ProbotOctokit;
+}
+
+describe('WorkflowRunCompletedHandler.findArtifactByName', () => {
+	it('returns null when matching artifact does not exist', async () => {
+		const octokit = createMockOctokit();
+		vi.mocked(octokit.rest.actions.listWorkflowRunArtifacts).mockResolvedValue({
+			data: { artifacts: [] }
+		} as never);
+		const handler = createHandler(octokit);
+
+		const result = await handler.findArtifactByName({
+			repo: new Repo('example-org', 'runner-repo'),
+			workflowRunId: 123456789,
+			artifactName: 'workflow-inputs'
+		});
+
+		expect(result).toBeNull();
+		expect(octokit.rest.actions.downloadArtifact).not.toHaveBeenCalled();
+	});
+
+	it('returns the matching artifact when found', async () => {
+		const octokit = createMockOctokit();
+		vi.mocked(octokit.rest.actions.listWorkflowRunArtifacts).mockResolvedValue({
+			data: {
+				artifacts: [
+					{ id: 1, name: 'other-artifact' },
+					{ id: 42, name: 'workflow-inputs' }
+				]
+			}
+		} as never);
+		const handler = createHandler(octokit);
+
+		const result = await handler.findArtifactByName({
+			repo: new Repo('example-org', 'runner-repo'),
+			workflowRunId: 123456789,
+			artifactName: 'workflow-inputs'
+		});
+
+		expect(result).toBe(42);
+	});
+
+	it('returns null when listWorkflowRunArtifacts throws', async () => {
+		const octokit = createMockOctokit();
+		vi.mocked(octokit.rest.actions.listWorkflowRunArtifacts).mockRejectedValue(
+			new Error('network error')
+		);
+		const handler = createHandler(octokit);
+
+		const result = await handler.findArtifactByName({
+			repo: new Repo('example-org', 'runner-repo'),
+			workflowRunId: 123456789,
+			artifactName: 'workflow-inputs'
+		});
+
+		expect(result).toBeNull();
+	});
+});
+
+describe('WorkflowRunCompletedHandler.downloadArtifactFile', () => {
+	it('returns the file content as Buffer when file exists in zip', async () => {
+		const octokit = createMockOctokit();
+		const zip = new AdmZip();
+		zip.addFile('inputs.json', Buffer.from('{"ok":true}'));
+		vi.mocked(octokit.rest.actions.downloadArtifact).mockResolvedValue({
+			data: zip.toBuffer()
+		} as never);
+		const handler = createHandler(octokit);
+
+		const result = await handler.downloadArtifactFile({
+			repo: new Repo('example-org', 'runner-repo'),
+			artifactId: 42,
+			filePath: 'inputs.json'
+		});
+
+		expect(result).toBeInstanceOf(Buffer);
+		expect(result?.toString('utf-8')).toBe('{"ok":true}');
+	});
+
+	it('returns null when requested file is not present in artifact zip', async () => {
+		const octokit = createMockOctokit();
+		const zip = new AdmZip();
+		zip.addFile('different-file.json', Buffer.from('{"ok":true}'));
+		vi.mocked(octokit.rest.actions.downloadArtifact).mockResolvedValue({
+			data: zip.toBuffer()
+		} as never);
+		const handler = createHandler(octokit);
+
+		const result = await handler.downloadArtifactFile({
+			repo: new Repo('example-org', 'runner-repo'),
+			artifactId: 42,
+			filePath: 'inputs.json'
+		});
+
+		expect(result).toBeNull();
+	});
+
+	it('returns null when downloadArtifact throws', async () => {
+		const octokit = createMockOctokit();
+		vi.mocked(octokit.rest.actions.downloadArtifact).mockRejectedValue(
+			new Error('download failed')
+		);
+		const handler = createHandler(octokit);
+
+		const result = await handler.downloadArtifactFile({
+			repo: new Repo('example-org', 'runner-repo'),
+			artifactId: 42,
+			filePath: 'inputs.json'
+		});
+
+		expect(result).toBeNull();
 	});
 });

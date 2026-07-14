@@ -75,45 +75,55 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 	 * @returns The parsed workflow inputs, or null if retrieval failed
 	 */
 	private async fetchInputs(repo: Repo, workflowRunId: number): Promise<WorkflowInputs | null> {
-		const inputs = await this.downloadArtifactFileJSON<WorkflowInputs>({
-			owner: repo.owner,
-			repo: repo.repo,
+		const artifactId = await this.findArtifactByName({
+			repo,
 			workflowRunId,
-			artifactName: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME,
+			artifactName: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME
+		});
+		if (!artifactId) {
+			this.log.error('Failed to find workflow inputs artifact.');
+			return null;
+		}
+		const buffer = await this.downloadArtifactFile({
+			repo,
+			artifactId,
 			filePath: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH
 		});
-		if (!inputs) {
-			this.log.error('Failed to retrieve workflow inputs.');
+		if (!buffer) {
+			this.log.error('Failed to download workflow inputs artifact file.');
+			return null;
 		}
-		return inputs;
+		try {
+			return JSON.parse(buffer.toString('utf-8')) as WorkflowInputs;
+		} catch (error) {
+			throw new Error(
+				`Failed to parse workflow inputs from artifact file: ${errorToString(error)}`,
+				{
+					cause: error
+				}
+			);
+		}
 	}
 
 	/**
-	 * Downloads a specific artifact, extracts it in-memory, and retrieves the content of a specific
-	 * file within the artifact, parsing it as JSON.
-	 * @param params Parameters for the artifact download
-	 * @param params.owner Repository owner
-	 * @param params.repo Repository name
+	 * Finds a workflow run artifact by name.
+	 * @param params Parameters for the artifact search
+	 * @param params.repo Repository info with owner and repo name
 	 * @param params.workflowRunId ID of the workflow run to get artifacts from
-	 * @param params.artifactName Name of the artifact to download
-	 * @param params.filePath Path to the file within the artifact to retrieve and parse as JSON
-	 * @returns The parsed content of the specified file within the artifact, or null if the artifact or file is not found
+	 * @param params.artifactName Name of the artifact to find
+	 * @returns The matching artifact ID, or null if not found
 	 */
-	protected async downloadArtifactFileJSON<ParseAs>(params: {
-		owner: string;
-		repo: string;
+	protected async findArtifactByName(params: {
+		repo: Repo;
 		workflowRunId: number;
 		artifactName: string;
-		filePath: string;
-	}): Promise<ParseAs | null> {
-		const { owner, repo, workflowRunId, artifactName, filePath } = params;
-
-		// List artifacts for the workflow run and find the one with the specified name
+	}): Promise<number | null> {
+		const { repo, workflowRunId, artifactName } = params;
 		let allArtifacts: { data: { artifacts: { id: number; name: string }[] } };
 		try {
 			const response = await this.octokit.rest.actions.listWorkflowRunArtifacts({
-				owner,
-				repo,
+				owner: repo.owner,
+				repo: repo.repo,
 				run_id: workflowRunId
 			});
 			allArtifacts = response;
@@ -121,18 +131,29 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 			this.log.error(`Failed to list workflow run artifacts: ${errorToString(error)}`);
 			return null;
 		}
-		const artifact = allArtifacts.data.artifacts.find((a) => a.name === artifactName);
-		if (!artifact) {
-			return null;
-		}
+		return allArtifacts.data.artifacts.find((a) => a.name === artifactName)?.id ?? null;
+	}
 
-		// Download and extract the artifact to get the workflow inputs
+	/**
+	 * Downloads an artifact zip and extracts the content of a specific file from it.
+	 * @param params Parameters for the artifact download
+	 * @param params.repo Repository info with owner and repo name
+	 * @param params.artifactId ID of the artifact to download
+	 * @param params.filePath Path to the file within the artifact to retrieve
+	 * @returns The file content as a Buffer, or null if not found
+	 */
+	protected async downloadArtifactFile(params: {
+		repo: Repo;
+		artifactId: number;
+		filePath: string;
+	}): Promise<Buffer | null> {
+		const { repo, artifactId, filePath } = params;
 		let downloadResponse: { data: ArrayBuffer };
 		try {
 			const response = await this.octokit.rest.actions.downloadArtifact({
-				owner,
-				repo,
-				artifact_id: artifact.id,
+				owner: repo.owner,
+				repo: repo.repo,
+				artifact_id: artifactId,
 				archive_format: 'zip',
 				request: {
 					redirect: 'follow'
@@ -143,21 +164,12 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 			this.log.error(`Failed to download artifact: ${errorToString(error)}`);
 			return null;
 		}
-
-		// Find the specified file in the artifact zip and parse its content as JSON
 		const buffer = Buffer.from(downloadResponse.data);
 		const zip = new AdmZip(buffer);
 		const file = zip.getEntries().find((entry) => entry.entryName === filePath);
 		if (!file) {
 			return null;
 		}
-		const content = file.getData().toString('utf-8');
-		try {
-			return JSON.parse(content) as ParseAs;
-		} catch (error) {
-			throw new Error(`Failed to parse JSON content from artifact file: ${errorToString(error)}`, {
-				cause: error
-			});
-		}
+		return file.getData();
 	}
 }
