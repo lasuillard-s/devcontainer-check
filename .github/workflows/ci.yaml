@@ -85,6 +85,7 @@ jobs:
     permissions:
       contents: read
     strategy:
+      fail-fast: false
       matrix:
         sha:
           # Branch testing-check-workflow - "No changes"
