@@ -81,7 +81,7 @@ jobs:
 
   # Call the check workflow (devcontainer-check.yaml) to test the workflow.
   call-workflow:
-    name: Call Workflow (${{ sha }})
+    name: Call Workflow (${{ matrix.sha }})
     uses: ./.github/workflows/devcontainer-check.yaml
     permissions:
       contents: read
