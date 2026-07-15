@@ -98,7 +98,6 @@ jobs:
           # Tag on the source repo (lasuillard-s/devcontainer-check) - "Reorder extension"
           - name: Changed
             sha: fixture/devcontainer-changed
-
     with:
       owner: lasuillard-s
       repo: devcontainer-check
