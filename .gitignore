@@ -1,18 +1,24 @@
-node_modules
-npm-debug.log
-*.pem
-!mock-cert.pem
-.env
+.devcontainer
+.vercel
+.vscode
 coverage
 lib
+node_modules
+.env
 .envrc
-.devcontainer
-.vscode
+*.pem
 junit.xml
-.vercel
+npm-debug.log
 
-# Created by https://www.toptal.com/developers/gitignore/api/git,osx,node,linux,windows,visualstudiocode
-# Edit at https://www.toptal.com/developers/gitignore?templates=git,osx,node,linux,windows,visualstudiocode
+# Created by https://www.toptal.com/developers/gitignore/api/git,osx,node,linux,windows,visualstudiocode,dotenv,direnv
+# Edit at https://www.toptal.com/developers/gitignore?templates=git,osx,node,linux,windows,visualstudiocode,dotenv,direnv
+
+### direnv ###
+.direnv
+.envrc
+
+### dotenv ###
+.env
 
 ### Git ###
 # Created by git for backups. To disable backups in Git:
@@ -120,7 +126,6 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env
 .env.development.local
 .env.test.local
 .env.production.local
@@ -258,4 +263,6 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.toptal.com/developers/gitignore/api/git,osx,node,linux,windows,visualstudiocode
+# End of https://www.toptal.com/developers/gitignore/api/git,osx,node,linux,windows,visualstudiocode,dotenv,direnv
+
+!mock-cert.pem
