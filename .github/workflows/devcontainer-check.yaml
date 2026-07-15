@@ -274,26 +274,28 @@ jobs:
         if: |
           steps.resolve-config.outputs.using-devcontainer == 'true'
           && steps.cached-result.outputs.reused != 'true'
-        timeout-minutes: 15
-        run: |
-          echo "::group::Validating dev container configuration schema"
-          echo 'Validating devcontainer configuration against schema...'
-          schema_sha='c95ffeed1d059abfe9ffbe79762dc2fa4e7c2421' # Mar 20, 2026
-          check-jsonschema \
-            --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" \
-            .devcontainer/devcontainer.json
-          echo "::endgroup::"
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 15
+          max_attempts: ${{ env.TESTING == 'true' && 3 || 1 }}
+          shell: bash
+          command: |
+            set -o errexit
+            set -o nounset
+            set -o pipefail
 
-          echo "::group::Building and starting dev container"
-          echo 'Building and starting dev container...'
-          devcontainer build --workspace-folder .
-          devcontainer up --workspace-folder .
-          echo "::endgroup::"
+            echo 'Validating devcontainer configuration against schema...'
+            schema_sha='c95ffeed1d059abfe9ffbe79762dc2fa4e7c2421' # Mar 20, 2026
+            check-jsonschema \
+              --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" \
+              .devcontainer/devcontainer.json
 
-          echo "::group::Running health check command in dev container"
-          echo 'Running health check command in dev container...'
-          devcontainer exec --workspace-folder . -- bash -c 'echo "Dev container is running successfully." || exit 1'
-          echo "::endgroup::"
+            echo 'Building and starting dev container...'
+            devcontainer build --workspace-folder .
+            devcontainer up --workspace-folder .
+
+            echo 'Running health check command in dev container...'
+            devcontainer exec --workspace-folder . -- bash -c 'echo "Dev container is running successfully." || exit 1'
 
       # Write the check result for both success and failure outcomes
       - name: Write check result
