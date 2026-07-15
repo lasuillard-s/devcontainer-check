@@ -277,7 +277,6 @@ jobs:
         uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 15
-          retry_on: error
           max_attempts: ${{ env.TESTING == 'true' && 3 || 1 }}
           shell: bash
           command: |
