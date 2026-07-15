@@ -1,0 +1,37 @@
+name: Test Workflow
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/devcontainer-check.yaml]
+
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/devcontainer-check.yaml]
+
+jobs:
+  call:
+    name: Call (${{ matrix.sha }})
+    uses: ./.github/workflows/devcontainer-check.yaml
+    permissions:
+      contents: read
+    strategy:
+      # Avoid collision when running multiple jobs in parallel, such as:
+      # "error: opening lock file "/nix/var/nix/db/big-lock": Permission denied"
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        include:
+          # Tag on the source repo (lasuillard-s/devcontainer-check) - "No changes"
+          - sha: fixture/devcontainer-unchanged
+
+          # Tag on the source repo (lasuillard-s/devcontainer-check) - "Reorder extension"
+          - sha: fixture/devcontainer-changed
+    with:
+      # Fixtures are pinned to the canonical source repository so forks reuse the
+      # same global, controlled dev container configurations instead of their own.
+      owner: lasuillard-s
+      repo: devcontainer-check
+      sha: ${{ matrix.sha }}
+      no-cached-result: true
+    secrets: inherit

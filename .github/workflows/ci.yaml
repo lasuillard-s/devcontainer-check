@@ -78,30 +78,3 @@ jobs:
           fail_ci_if_error: false
           files: coverage/clover.xml
           flags: unit
-
-  # Call the check workflow (devcontainer-check.yaml) to test the workflow.
-  call-workflow:
-    name: Call Workflow (${{ matrix.sha }})
-    uses: ./.github/workflows/devcontainer-check.yaml
-    permissions:
-      contents: read
-    strategy:
-      # Avoid collision when running multiple jobs in parallel, such as:
-      # "error: opening lock file "/nix/var/nix/db/big-lock": Permission denied"
-      max-parallel: 1
-      fail-fast: false
-      matrix:
-        # Fixtures are pinned to the canonical source repository so forks reuse the
-        # same global, controlled dev container configurations instead of their own.
-        include:
-          # Tag on the source repo (lasuillard-s/devcontainer-check) - "No changes"
-          - sha: fixture/devcontainer-unchanged
-
-          # Tag on the source repo (lasuillard-s/devcontainer-check) - "Reorder extension"
-          - sha: fixture/devcontainer-changed
-    with:
-      owner: lasuillard-s
-      repo: devcontainer-check
-      sha: ${{ matrix.sha }}
-      no-cached-result: true
-    secrets: inherit
