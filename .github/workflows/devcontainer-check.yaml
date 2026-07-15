@@ -21,7 +21,7 @@ on:
         type: string
         required: true
 
-  # Use by other workflows to test the workflow
+  # NOTE: This workflow call trigger is intended to be used in other workflows for testing rather than for reuse.
   workflow_call:
     inputs:
       owner:
@@ -38,6 +38,11 @@ on:
         description: Commit SHA to check
         type: string
         required: true
+
+      no-cached-result:
+        description: Do not use cached result. It does not disable cache operations.
+        type: boolean
+        required: false
 
 concurrency:
   # Single workflow run per caller repository/SHA. github.repository refers to
@@ -174,6 +179,7 @@ jobs:
             };
 
             // Read and parse the dev container configuration
+            core.info(`Reading dev container configuration from ${configPath}`);
             let config;
             try {
               config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -184,7 +190,11 @@ jobs:
 
             // Calculate the hash
             const stableConfig = stableStringify(sanitize(config));
+            core.debug(`Stable dev container configuration: ${JSON.stringify(stableConfig, null, 2)}`);
+
             const serialized = JSON.stringify(stableConfig, null, 2);
+            core.debug(`Serialized dev container configuration: ${serialized}`);
+
             const hash = crypto.createHash('sha256').update(serialized).digest('hex');
             if (!hash) {
               core.setFailed('Failed to calculate configuration hash. The dev container configuration might be invalid.');
@@ -209,10 +219,12 @@ jobs:
           steps.resolve-config.outputs.using-devcontainer == 'true'
           && steps.cache.outputs.cache-hit == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          NO_CACHED_RESULT: ${{ inputs.no-cached-result }}
         with:
           script: |
             const fs = require('node:fs');
-            const { CHECK_RESULT } = process.env;
+            const { CHECK_RESULT, NO_CACHED_RESULT } = process.env;
 
             if (!fs.existsSync(CHECK_RESULT)) {
               core.warning('Cached result file is missing. Falling back to a fresh check.');
@@ -231,6 +243,12 @@ jobs:
 
             if (typeof result?.success !== 'boolean') {
               core.warning('Cached result is malformed. Falling back to a fresh check.');
+              core.setOutput('reused', 'false');
+              return;
+            }
+
+            if (NO_CACHED_RESULT) {
+              core.info('Cached result is valid, but the "no-cached-result" input is set. Falling back to a fresh check.');
               core.setOutput('reused', 'false');
               return;
             }

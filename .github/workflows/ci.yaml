@@ -102,4 +102,5 @@ jobs:
       owner: lasuillard-s
       repo: devcontainer-check
       sha: ${{ matrix.sha }}
+      no-cached-result: true
     secrets: inherit
