@@ -86,6 +86,9 @@ jobs:
     permissions:
       contents: read
     strategy:
+      # Avoid collision when running multiple jobs in parallel, such as:
+      # "error: opening lock file "/nix/var/nix/db/big-lock": Permission denied"
+      max-parallel: 1
       fail-fast: false
       matrix:
         # Fixtures are pinned to the canonical source repository so forks reuse the
