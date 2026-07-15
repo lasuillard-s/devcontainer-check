@@ -81,7 +81,7 @@ jobs:
 
   # Call the check workflow (devcontainer-check.yaml) to test the workflow.
   call-workflow:
-    name: Call Workflow (${{ matrix.name }})
+    name: Call Workflow (${{ sha }})
     uses: ./.github/workflows/devcontainer-check.yaml
     permissions:
       contents: read
@@ -92,12 +92,10 @@ jobs:
         # same global, controlled dev container configurations instead of their own.
         include:
           # Tag on the source repo (lasuillard-s/devcontainer-check) - "No changes"
-          - name: Unchanged
-            sha: fixture/devcontainer-unchanged
+          - sha: fixture/devcontainer-unchanged
 
           # Tag on the source repo (lasuillard-s/devcontainer-check) - "Reorder extension"
-          - name: Changed
-            sha: fixture/devcontainer-changed
+          - sha: fixture/devcontainer-changed
     with:
       owner: lasuillard-s
       repo: devcontainer-check
