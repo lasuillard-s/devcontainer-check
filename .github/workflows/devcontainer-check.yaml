@@ -280,6 +280,10 @@ jobs:
           max_attempts: ${{ env.TESTING == 'true' && 3 || 1 }}
           shell: bash
           command: |
+            set -o errexit
+            set -o nounset
+            set -o pipefail
+
             echo 'Validating devcontainer configuration against schema...'
             schema_sha='c95ffeed1d059abfe9ffbe79762dc2fa4e7c2421' # Mar 20, 2026
             check-jsonschema \
@@ -292,7 +296,6 @@ jobs:
 
             echo 'Running health check command in dev container...'
             devcontainer exec --workspace-folder . -- bash -c 'echo "Dev container is running successfully." || exit 1'
-            echo "Check finished with exit code ${?}"
 
       # Write the check result for both success and failure outcomes
       - name: Write check result
