@@ -24,6 +24,13 @@ on:
   # NOTE: This workflow call trigger is intended to be used in other workflows for testing rather than for reuse.
   workflow_call:
     inputs:
+      # The source of the workflow call to distinguish between workflow_dispatch and workflow_call
+      source:
+        description: Source of the workflow call
+        type: string
+        required: false
+        default: workflow_call
+
       owner:
         description: Owner of the repository to check dev container configuration for
         type: string
@@ -61,7 +68,7 @@ jobs:
     permissions:
       contents: read
     env:
-      TESTING: ${{ github.event_name == 'workflow_call' }}
+      TESTING: ${{ inputs.source == 'workflow_call' }}
       CHECK_RESULT: .devcontainer-check/result.json
       CHECK_RESULT_DIR: .devcontainer-check
     defaults:
