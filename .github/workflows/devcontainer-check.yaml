@@ -61,6 +61,7 @@ jobs:
     permissions:
       contents: read
     env:
+      TESTING: ${{ github.event_name == 'workflow_call' }}
       CHECK_RESULT: .devcontainer-check/result.json
       CHECK_RESULT_DIR: .devcontainer-check
     defaults:
@@ -74,6 +75,7 @@ jobs:
         run: echo '${{ toJSON(inputs) }}' > inputs.json
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        continue-on-error: ${{ env.TESTING == 'true'}} # Ignore conflicts if artifact already exists when testing with workflow_call
         with:
           name: workflow-inputs
           path: inputs.json
@@ -88,7 +90,7 @@ jobs:
 
       - name: Get application token
         id: get-token
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ env.TESTING != 'true' }}
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           private-key: ${{ secrets.DEVCONTAINER_CHECK_PRIVATE_KEY || secrets.PRIVATE_KEY }}
