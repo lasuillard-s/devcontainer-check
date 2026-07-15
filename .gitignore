@@ -4,8 +4,6 @@
 coverage
 lib
 node_modules
-.env
-.envrc
 *.pem
 junit.xml
 npm-debug.log
