@@ -21,11 +21,44 @@ on:
         type: string
         required: true
 
+  # NOTE: This workflow call trigger is intended to be used in other workflows for testing rather than for reuse.
+  workflow_call:
+    inputs:
+      # The source of the workflow call to distinguish between workflow_dispatch and workflow_call
+      source:
+        description: Source of the workflow call
+        type: string
+        required: false
+        default: workflow_call
+
+      owner:
+        description: Owner of the repository to check dev container configuration for
+        type: string
+        required: true
+
+      repo:
+        description: Repository to check dev container configuration for
+        type: string
+        required: true
+
+      sha:
+        description: Commit SHA to check
+        type: string
+        required: true
+
+      no-cached-result:
+        description: Do not use cached result. It does not disable cache operations.
+        type: boolean
+        required: false
+
 concurrency:
-  # Single workflow run per repository/SHA
+  # Single workflow run per caller repository/SHA. github.repository refers to
+  # the caller (e.g. a fork), so shared fixtures don't cancel each other's runs.
   group: |-
-    ${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
+    ${{ github.repository }}|${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
   cancel-in-progress: true
+
+# NOTE: RUNNER_TEMP variable reference: https://docs.github.com/en/actions/reference/workflows-and-actions/variables
 
 jobs:
   check:
@@ -35,8 +68,13 @@ jobs:
     permissions:
       contents: read
     env:
+      TESTING: ${{ inputs.source == 'workflow_call' }}
       CHECK_RESULT: .devcontainer-check/result.json
       CHECK_RESULT_DIR: .devcontainer-check
+    defaults:
+      run:
+        # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#defaultsrunshell
+        shell: bash
     steps:
       # Save the workflow inputs as an artifact for use on workflow completion event
       # (see src/handlers/workflow_run.completed.ts)
@@ -44,6 +82,7 @@ jobs:
         run: echo '${{ toJSON(inputs) }}' > inputs.json
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        continue-on-error: ${{ env.TESTING == 'true'}} # Ignore conflicts if artifact already exists when testing with workflow_call
         with:
           name: workflow-inputs
           path: inputs.json
@@ -58,6 +97,7 @@ jobs:
 
       - name: Get application token
         id: get-token
+        if: ${{ env.TESTING != 'true' }}
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           private-key: ${{ secrets.DEVCONTAINER_CHECK_PRIVATE_KEY || secrets.PRIVATE_KEY }}
@@ -71,79 +111,105 @@ jobs:
         with:
           repository: ${{ inputs.owner }}/${{ inputs.repo }}
           ref: ${{ inputs.sha }}
-          token: ${{ steps.get-token.outputs.token }}
+          token: ${{ steps.get-token.outputs.token || github.token }}
           fetch-depth: 1 # Only fetch the latest commit to speed up the workflow
 
-      # Calculate hash of devcontainer configuration
-      - name: Check dev container configuration
+      # Resolve which dev container configuration to use
+      - name: Resolve dev container configuration
         id: resolve-config
-        # outputs: using-devcontainer
-        run: |
-          if [ -d '.devcontainer' ]; then
-            echo 'Found .devcontainer directory, using it as the dev container configuration.'
-            echo 'using-devcontainer=true' >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if [ -d '.devcontainer.example' ]; then
-            echo 'Found .devcontainer.example directory, using it as the dev container configuration.'
-            cp --recursive .devcontainer.example .devcontainer
-            echo 'using-devcontainer=true' >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo 'No dev container configuration found in the repository.'
-          echo 'using-devcontainer=false' >> "$GITHUB_OUTPUT"
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('node:fs');
+            if (fs.existsSync('.devcontainer')) {
+              core.info('Found .devcontainer directory, using it as the dev container configuration.');
+              core.setOutput('using-devcontainer', 'true');
+              return;
+            }
+            if (fs.existsSync('.devcontainer.example')) {
+              core.info('Found .devcontainer.example directory, using it as the dev container configuration.');
+              fs.cpSync('.devcontainer.example', '.devcontainer', { recursive: true });
+              core.setOutput('using-devcontainer', 'true');
+              return;
+            }
+            core.info('No dev container configuration found in the repository.');
+            core.setOutput('using-devcontainer', 'false');
 
-      - name: Calculate hash of dev container configuration
-        id: hash-config
+      # Read the raw dev container configuration (requires Docker)
+      - name: Read dev container configuration
+        id: read-config
         if: steps.resolve-config.outputs.using-devcontainer == 'true'
         timeout-minutes: 5
-        shell: bash
-        # outputs: config-hash
         run: |
-          echo "::group::Calculating hash of dev container configuration"
-          config="$( \
-            devcontainer read-configuration \
-              --workspace-folder . \
-              --include-features-configuration \
-              --include-merged-configuration \
-          )"
-          echo "Raw dev container configuration:"
-          echo "$config"
-          echo "::endgroup::"
+          devcontainer read-configuration \
+            --workspace-folder . \
+            --include-features-configuration \
+            --include-merged-configuration \
+            > "${RUNNER_TEMP}/devcontainer-config.json"
 
-          echo "::group::Sanitizing dev container configuration for hashing"
-          sanitized_config="$( \
-            echo "$config" \
-            | jq --compact-output --sort-keys '
-              del(
-                .workspace.workspaceFolder,
-                .workspace.workspaceMount,
-                .configuration.configFilePath,
-                .featuresConfiguration.dstFolder,
-                .featuresConfiguration.featureSets[].features[].cachePath,
-                .mergedConfiguration.configFilePath
-              )' \
-            )"
-          echo "Sanitized dev container configuration:"
-          echo "$sanitized_config"
-          echo "::endgroup::"
+      # Calculate a stable hash of the (sanitized) dev container configuration
+      - name: Calculate hash of dev container configuration
+        id: hash-config
+        if: |
+          steps.resolve-config.outputs.using-devcontainer == 'true'
+          && steps.read-config.outcome == 'success'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('node:fs');
+            const crypto = require('node:crypto');
 
-          echo "::group::Calculating hash of sanitized dev container configuration"
-          config_hash="$( \
-            echo "$sanitized_config" \
-            | sha256sum \
-            | awk '{print $1}' \
-          )"
-          echo "Calculated configuration hash: $config_hash"
-          echo "::endgroup::"
+            const { RUNNER_TEMP } = process.env;
+            const configPath = `${RUNNER_TEMP}/devcontainer-config.json`;
 
-          echo "::group::Exporting output variables"
-          echo "config-hash=${config_hash}" | tee --append "$GITHUB_OUTPUT"
-          if [ -z "$config_hash" ]; then
-            echo "Failed to calculate configuration hash. The dev container configuration might be invalid."
-            exit 1
-          fi
-          echo "::endgroup::"
+            // Sort keys to ensure the same configuration always produces the same hash
+            const stableStringify = (value) => {
+              if (value === null || typeof value !== 'object') return value;
+              if (Array.isArray(value)) return value.map(stableStringify);
+              const sorted = {};
+              for (const key of Object.keys(value).sort()) {
+                sorted[key] = stableStringify(value[key]);
+              }
+              return sorted;
+            };
+
+            // Remove unstable parts of the dev container configuration
+            const sanitize = (config) => {
+              if (!config || typeof config !== 'object') return config;
+              delete config.workspace?.workspaceFolder;
+              delete config.workspace?.workspaceMount;
+              delete config.configuration?.configFilePath;
+              delete config.featuresConfiguration?.dstFolder;
+              for (const set of config.featuresConfiguration?.featureSets ?? []) {
+                for (const feature of set?.features ?? []) delete feature.cachePath;
+              }
+              delete config.mergedConfiguration?.configFilePath;
+              return config;
+            };
+
+            // Read and parse the dev container configuration
+            core.info(`Reading dev container configuration from ${configPath}`);
+            let config;
+            try {
+              config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            } catch (error) {
+              core.setFailed(`Failed to parse dev container configuration: ${error.message}`);
+              return;
+            }
+
+            // Calculate the hash
+            const stableConfig = stableStringify(sanitize(config));
+            core.debug(`Stable dev container configuration: ${JSON.stringify(stableConfig, null, 2)}`);
+
+            const serialized = JSON.stringify(stableConfig, null, 2);
+            core.debug(`Serialized dev container configuration: ${serialized}`);
+
+            const hash = crypto.createHash('sha256').update(serialized).digest('hex');
+            if (!hash) {
+              core.setFailed('Failed to calculate configuration hash. The dev container configuration might be invalid.');
+              return;
+            }
+            core.setOutput('config-hash', hash);
 
       # Restore previous check result from cache and re-use it
       - name: Restore previous check result from cache
@@ -155,40 +221,52 @@ jobs:
             steps.hash-config.outputs.config-hash }}
           path: ${{ env.CHECK_RESULT_DIR }}
 
+      # Validate a restored result and re-use it when valid
       - name: Re-use cached result if valid
         id: cached-result
         if: |
           steps.resolve-config.outputs.using-devcontainer == 'true'
           && steps.cache.outputs.cache-hit == 'true'
-        # outputs: reused
-        run: |
-          echo "Cache hit for dev container configuration. Validating cached result..."
-          if [ ! -f "$CHECK_RESULT" ]; then
-            echo "Cached result file is missing. Falling back to a fresh check."
-            echo "reused=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          NO_CACHED_RESULT: ${{ inputs.no-cached-result }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { CHECK_RESULT, NO_CACHED_RESULT } = process.env;
 
-          success=$(jq -er '.success | select(type == "boolean")' "$CHECK_RESULT" 2>/dev/null || true)
-          if [ -z "$success" ]; then
-            echo "Cached result is malformed. Falling back to a fresh check."
-            echo "reused=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+            if (!fs.existsSync(CHECK_RESULT)) {
+              core.warning('Cached result file is missing. Falling back to a fresh check.');
+              core.setOutput('reused', 'false');
+              return;
+            }
 
-          echo "Cached result is valid. Re-using previous result."
-          echo ""
-          cat "$CHECK_RESULT"
-          echo ""
-          echo "reused=true" >> "$GITHUB_OUTPUT"
+            let result;
+            try {
+              result = JSON.parse(fs.readFileSync(CHECK_RESULT, 'utf8'));
+            } catch (error) {
+              core.warning(`Cached result is malformed (${error.message}). Falling back to a fresh check.`);
+              core.setOutput('reused', 'false');
+              return;
+            }
 
-          if [ "$success" = "true" ]; then
-            echo "Previous check was successful."
-            exit 0
-          else
-            echo "Previous check was unsuccessful."
-            exit 1
-          fi
+            if (typeof result?.success !== 'boolean') {
+              core.warning('Cached result is malformed. Falling back to a fresh check.');
+              core.setOutput('reused', 'false');
+              return;
+            }
+
+            if (NO_CACHED_RESULT) {
+              core.info('Cached result is valid, but the "no-cached-result" input is set. Falling back to a fresh check.');
+              core.setOutput('reused', 'false');
+              return;
+            }
+
+            core.info('Cached result is valid. Re-using previous result.');
+            core.setOutput('reused', 'true');
+            if (!result.success) {
+              core.setFailed('Previous check was unsuccessful.');
+            }
 
       # Cache miss - check the dev container configuration and cache the result
       - name: Check for dev container health
@@ -217,58 +295,54 @@ jobs:
           devcontainer exec --workspace-folder . -- bash -c 'echo "Dev container is running successfully." || exit 1'
           echo "::endgroup::"
 
-      # On check was successful
-      - name: Write successful check result with jq
-        id: write-success-result
+      # Write the check result for both success and failure outcomes
+      - name: Write check result
+        id: write-result
         if: |
           always()
-          && steps.health-check.outcome == 'success'
-        run: |
-          mkdir --parents "$CHECK_RESULT_DIR"
-          jq --null-input \
-            --arg owner '${{ inputs.owner }}' \
-            --arg repo '${{ inputs.repo }}' \
-            --arg sha '${{ inputs.sha }}' \
-            --arg configHash '${{ steps.hash-config.outputs.config-hash }}' \
-            --arg checkedAt "$(date --utc +'%Y-%m-%dT%H:%M:%SZ')" \
-            '{
-              success: true,
-              owner: $owner,
-              repo: $repo,
-              sha: $sha,
-              configHash: $configHash,
-              checkedAt: $checkedAt
-            }' > "$CHECK_RESULT"
+          && steps.resolve-config.outputs.using-devcontainer == 'true'
+          && steps.hash-config.outcome == 'success'
+          && steps.cached-result.outputs.reused != 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RESULT_OWNER: ${{ inputs.owner }}
+          RESULT_REPO: ${{ inputs.repo }}
+          RESULT_SHA: ${{ inputs.sha }}
+          RESULT_CONFIG_HASH: ${{ steps.hash-config.outputs.config-hash }}
+          RESULT_HEALTH_OUTCOME: ${{ steps.health-check.outcome }}
+        with:
+          script: |
+            const fs = require('node:fs');
 
-      # On check was failure
-      - name: Write failed check result with jq
-        id: write-failed-result
-        if: |
-          always()
-          && steps.health-check.outcome == 'failure'
-        run: |
-          mkdir --parents "$CHECK_RESULT_DIR"
-          jq --null-input \
-            --arg owner '${{ inputs.owner }}' \
-            --arg repo '${{ inputs.repo }}' \
-            --arg sha '${{ inputs.sha }}' \
-            --arg configHash '${{ steps.hash-config.outputs.config-hash }}' \
-            --arg checkedAt "$(date --utc +'%Y-%m-%dT%H:%M:%SZ')" \
-            '{
-              success: false,
-              owner: $owner,
-              repo: $repo,
-              sha: $sha,
-              configHash: $configHash,
-              checkedAt: $checkedAt
-            }' > "$CHECK_RESULT"
+            const {
+              CHECK_RESULT,
+              CHECK_RESULT_DIR,
+              RESULT_OWNER,
+              RESULT_REPO,
+              RESULT_SHA,
+              RESULT_CONFIG_HASH,
+              RESULT_HEALTH_OUTCOME,
+            } = process.env;
+
+            fs.mkdirSync(CHECK_RESULT_DIR, { recursive: true });
+
+            const result = {
+              success: RESULT_HEALTH_OUTCOME === 'success',
+              owner: RESULT_OWNER,
+              repo: RESULT_REPO,
+              sha: RESULT_SHA,
+              configHash: RESULT_CONFIG_HASH,
+              checkedAt: new Date().toISOString()
+            };
+            fs.writeFileSync(CHECK_RESULT, JSON.stringify(result, null, 2));
+            core.info(`Wrote check result (success=${result.success})`);
 
       - name: Save check result to cache
         if: |
           always()
           && steps.resolve-config.outputs.using-devcontainer == 'true'
           && steps.cached-result.outputs.reused != 'true'
-          && (steps.write-success-result.outcome == 'success' || steps.write-failed-result.outcome == 'success')
+          && steps.write-result.outcome == 'success'
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           key: check-result-${{ inputs.owner }}-${{ inputs.repo }}-${{
