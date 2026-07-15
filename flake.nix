@@ -27,6 +27,7 @@
             just
             nodejs_24
             ngrok
+            devcontainer
           ];
           shellHook = ''
             pre-commit install
