@@ -37,7 +37,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"adm-zip": "^0.5.17",
+		"adm-zip": "^0.6.0",
 		"minimatch": "^10.2.5",
 		"probot": "^14.0.0",
 		"zod": "^4.3.6"
