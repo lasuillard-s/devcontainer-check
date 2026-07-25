@@ -2,20 +2,20 @@
 	"compilerOptions": {
 		"incremental": true,
 		"target": "es2022",
-		"module": "Node16",
+		"module": "nodenext",
 		"declaration": true,
 		"sourceMap": true,
+		"rootDir": ".",
 		"outDir": "./dist",
-		/* Strict Type-Checking Options */
 		"strict": true,
-		/* Additional Checks */
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
-		"moduleResolution": "Node16",
+		"moduleResolution": "nodenext",
 		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true
+		"forceConsistentCasingInFileNames": true,
+		"types": ["node"]
 	},
 	"include": ["src/", "api/"],
 	"compileOnSave": false

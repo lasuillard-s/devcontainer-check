@@ -57,7 +57,7 @@ Then open `http://localhost:3000` to register and run the app with Probot's loca
 
 ## 👂 Deploying the webhook handler
 
-This app is configured for Vercel through [`vercel.ts`](./vercel.ts).
+This app is configured for Vercel through [`vercel.json`](./vercel.json).
 
 - Use [`app.yaml`](./app.yaml) or Probot's app registration flow to install the GitHub App.
 - Set the GitHub App secrets and `RUNNER_REPOSITORY` in your deployment environment.

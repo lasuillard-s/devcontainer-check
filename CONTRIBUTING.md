@@ -26,7 +26,7 @@ This project uses the following tech stack:
 - `app.yaml`: GitHub App manifest
 - `flake.nix`: Nix Flake configuration for the development environment
 - `Justfile`: Development and maintenance commands
-- `vercel.ts`: Vercel build configuration
+- `vercel.json`: Vercel build configuration
 
 ## 🔧 Set up the development environment
 

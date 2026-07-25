@@ -2,12 +2,7 @@
 	"name": "devcontainer-check",
 	"version": "0.1.0",
 	"private": true,
-	"description": "A GitHub App to automate validating your repository dev container configuration.",
-	"keywords": [
-		"probot",
-		"github",
-		"probot-app"
-	],
+	"readme": "README.md",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
@@ -59,7 +54,6 @@
 		"@eslint/js": "10.0.1",
 		"@types/adm-zip": "0.5.8",
 		"@types/node": "24.13.3",
-		"@vercel/config": "0.5.5",
 		"@vitest/coverage-v8": "4.1.10",
 		"eslint-config-prettier": "10.1.8",
 		"eslint-plugin-jsdoc": "63.1.0",
