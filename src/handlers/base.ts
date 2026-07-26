@@ -2,8 +2,7 @@ import type { Logger } from 'pino';
 import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
 import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
-import { createWorkflowDispatch } from '../octokit.js';
-import { Repo } from '../types.js';
+import { createWorkflowDispatch, Repo } from '../octokit.js';
 import { errorToString } from '../utils.js';
 import type { WorkflowInputs } from './types.js';
 

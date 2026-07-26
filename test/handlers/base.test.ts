@@ -2,7 +2,7 @@ import { Context, Probot } from 'probot';
 import { beforeEach, describe, expect, /* it, */ vi } from 'vitest';
 import { loadConfig } from '../../src/config.js';
 import { BaseHandler } from '../../src/handlers/base.js';
-import { Repo } from '../../src/types.js';
+import { Repo } from '../../src/octokit.js';
 import { test as it } from '../helpers.js';
 
 /**

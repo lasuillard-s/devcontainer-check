@@ -1,6 +1,6 @@
 import type { Probot } from 'probot';
 import * as z from 'zod';
-import { Repo } from './types.js';
+import { Repo } from './octokit.js';
 import { errorToString } from './utils.js';
 
 export const DEFAULT_BRANCH_ALIAS = '~DEFAULT_BRANCH';

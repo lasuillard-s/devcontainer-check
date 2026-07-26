@@ -1,7 +1,7 @@
 import AdmZip from 'adm-zip';
 import path from 'node:path';
 import { Context } from 'probot';
-import { Repo } from '../types.js';
+import { Repo } from '../octokit.js';
 import { errorToString } from '../utils.js';
 import { BaseHandler, CHECK_RUN_NAME } from './base.js';
 import type { WorkflowInputs } from './types.js';

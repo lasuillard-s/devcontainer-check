@@ -1,7 +1,7 @@
 import { Context } from 'probot';
 import { DEFAULT_BRANCH_ALIAS } from '../config.js';
 import { isDevContainerFileChanged } from '../devcontainer.js';
-import { Repo } from '../types.js';
+import { Repo } from '../octokit.js';
 import { matchPatterns } from '../utils.js';
 import { BaseHandler, CHECK_RUN_NAME } from './base.js';
 

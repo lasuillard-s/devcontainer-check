@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, vi } from 'vitest';
 import { loadConfig } from '../../src/config.js';
 import type { WorkflowInputs } from '../../src/handlers/types.js';
 import WorkflowRunCompletedHandler from '../../src/handlers/workflow_run.completed.js';
-import { Repo } from '../../src/types.js';
+import { Repo } from '../../src/octokit.js';
 import payload from '../fixtures/workflow_run.completed.json' with { type: 'json' };
 import { test as it } from '../helpers.js';
 
