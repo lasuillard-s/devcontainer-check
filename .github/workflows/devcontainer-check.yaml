@@ -55,7 +55,7 @@ concurrency:
   # Single workflow run per caller repository/SHA. github.repository refers to
   # the caller (e.g. a fork), so shared fixtures don't cancel each other's runs.
   group: |-
-    ${{ github.repository }}|${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
+    ${{ github.repository }}:${{ github.ref }}:${{ github.workflow }}|${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
   cancel-in-progress: true
 
 # NOTE: RUNNER_TEMP variable reference: https://docs.github.com/en/actions/reference/workflows-and-actions/variables
