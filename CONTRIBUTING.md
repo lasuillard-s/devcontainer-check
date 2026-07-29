@@ -32,6 +32,15 @@ This project uses the following tech stack:
 
 This repository uses `nix` to manage dependencies and development tools. Run `nix develop` to set up a local development environment, then run `just install` to install dependencies.
 
+Development environment comes with following tools installed:
+
+- `pre-commit`
+- `just` for command runner
+- Node.js 24.x
+- `ngrok` for webhook testing
+- `devcontainer` CLI for dev container testing
+- `opentofu` for deployment
+
 If you prefer a Dev Container, an example configuration is available in [.devcontainer.example/devcontainer.json](.devcontainer.example/devcontainer.json). Copy it to `.devcontainer/devcontainer.json` to use it locally.
 
 ## ✅ Verifying changes
