@@ -73,8 +73,6 @@ The most important environment variables are below. See [`.env.example`](./.env.
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `APP_ID`                                     | GitHub App ID.                                                                                                   |
 | `PRIVATE_KEY`                                | GitHub App private key.                                                                                          |
-| `GITHUB_CLIENT_ID`                           | GitHub App client ID.                                                                                            |
-| `GITHUB_CLIENT_SECRET`                       | GitHub App client secret.                                                                                        |
 | `WEBHOOK_SECRET`                             | GitHub webhook secret.                                                                                           |
 | `WEBHOOK_PROXY_URL`                          | Optional local webhook proxy URL.                                                                                |
 | `RUNNER_REPOSITORY`                          | Required runner repository in `owner/repo` format, used for public (or unknown-visibility) target repositories.  |
