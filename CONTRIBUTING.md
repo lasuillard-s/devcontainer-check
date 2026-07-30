@@ -53,4 +53,4 @@ Please submit pull requests on GitHub. Before opening a PR, make sure your chang
 
 ## 🚀 Release process
 
-This project is provided as-is. The intended use is to fork or clone the source code and deploy it to Vercel using the app and build configuration already in the repository.
+This project is provided as-is. Available deployment options are included in the [deploy](./deploy) directory. Please refer to the directory for detailed instructions on how to deploy the app to your preferred platform.

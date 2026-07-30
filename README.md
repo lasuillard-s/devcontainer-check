@@ -57,13 +57,7 @@ Then open `http://localhost:3000` to register and run the app with Probot's loca
 
 ## 👂 Deploying the webhook handler
 
-This app is configured for Vercel through [`vercel.json`](./vercel.json).
-
-- Use [`app.yaml`](./app.yaml) or Probot's app registration flow to install the GitHub App.
-- Set the GitHub App secrets and `RUNNER_REPOSITORY` in your deployment environment.
-- Make sure the app is installed on the target repositories and on whichever runner repository or repositories you use.
-
-The build uses `npm run build` and outputs to `dist/`.
+This app is configured for Vercel through [`vercel.json`](./vercel.json). This project also offers an option to deploy the app to Vercel using Terraform. See the [`deploy/terraform-vercel`](./deploy/terraform-vercel) directory for deployment instructions.
 
 ## 📏 Configuration
 
@@ -89,7 +83,7 @@ The most important environment variables are below. See [`.env.example`](./.env.
 
 - The app only checks file changes under `.devcontainer/` and `.devcontainer.example/`.
 - Pushes on branches outside `PUSH_BRANCHES` are ignored unless they are associated with a pull request whose base branch matches `PR_BRANCHES`.
-- Private target repositories need a private runner repository, unless `USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES` is enabled.
+- Private target repositories require a private runner repository. This prevents private repository content leaks through a publicly exposed runner. You can disable this protection by setting `USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES` to `true`, but use it at your own risk.
 - The runner workflow must upload the configured inputs artifact so the completion handler can map results back to the original commit.
 
 ## 💖 Contributing
