@@ -64,6 +64,6 @@ variable "variables" {
   type        = map(string)
   description = "Additional variables to set in the Vercel environment."
   default = {
-    LOG_LEVEL = "info"
+    "LOG_LEVEL" = "info"
   }
 }
