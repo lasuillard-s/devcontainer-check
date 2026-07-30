@@ -32,6 +32,15 @@ This project uses the following tech stack:
 
 This repository uses `nix` to manage dependencies and development tools. Run `nix develop` to set up a local development environment, then run `just install` to install dependencies.
 
+Development environment comes with following tools installed:
+
+- `pre-commit`
+- `just` for command runner
+- Node.js 24.x
+- `ngrok` for webhook testing
+- `devcontainer` CLI for dev container testing
+- `opentofu` for deployment
+
 If you prefer a Dev Container, an example configuration is available in [.devcontainer.example/devcontainer.json](.devcontainer.example/devcontainer.json). Copy it to `.devcontainer/devcontainer.json` to use it locally.
 
 ## ✅ Verifying changes
@@ -44,4 +53,4 @@ Please submit pull requests on GitHub. Before opening a PR, make sure your chang
 
 ## 🚀 Release process
 
-This project is provided as-is. The intended use is to fork or clone the source code and deploy it to Vercel using the app and build configuration already in the repository.
+This project is provided as-is. Available deployment options are included in the [deploy](./deploy) directory. Please refer to the directory for detailed instructions on how to deploy the app to your preferred platform.

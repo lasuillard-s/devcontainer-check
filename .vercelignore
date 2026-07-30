@@ -1,0 +1,5 @@
+# NOTE: Vercel ignore file does not work with allowlist pattern :(
+
+.devcontainer
+.direnv/
+.vscode
