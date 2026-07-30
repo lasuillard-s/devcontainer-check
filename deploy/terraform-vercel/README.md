@@ -5,14 +5,14 @@ This guide explains how to deploy the app to Vercel using Terraform Cloud as the
 > [!NOTE]
 > You can also use the Terraform CLI to deploy to Vercel, but you will need to manage the state file yourself.
 
-1. Create a new workspace in Terraform Cloud.
+1. Create a new workspace in Terraform Cloud with **Version Control Workflow**.
 
    ![Create a new workspace in Terraform Cloud](images/create-new-workspace.png)
+   ![Choose workflow type](images/choose-workflow-type.png)
 
 1. If you have not connected your repository, install the Terraform GitHub App on your account or organization first:
 
    ![Connect to a version control provider](images/connect-vcs.png)
-   ![Install Terraform Cloud](images/install-terraform-app.png)
 
 1. Then choose your repository (fork or clone).
 
@@ -22,14 +22,26 @@ This guide explains how to deploy the app to Vercel using Terraform Cloud as the
 
    ![Update advanced options](images/update-advanced-options.png)
 
-1. Go to the workspace settings and add the required workspace variables.
+1. You will be prompted to add variables to your workspace, as follows:
+
+   ![Add recommended workspace variables](images/add-recommended-workspace-variables.png)
+
+   For variables Terraform Cloud does not catch, you can add them manually on the **Variables** page.
 
    ![Add workspace variables](images/add-workspace-variables.png)
 
-1. Click **New run** and start a plan to verify everything is correct, then click **Confirm & apply** at the bottom.
+1. Click **New run** and start a plan to deploy the app to Vercel.
 
-   ![Start new speculative plan](images/new-speculative-plan.png)
+   ![Start new speculative plan](images/start-new-run.png)
 
-1. Update the webhook URL of your GitHub App to the new URL provided by Vercel.
+1. Review the plan and click **Confirm & apply** to deploy the app to Vercel.
+
+   ![Review the plan](images/review-plan.png)
+
+1. Check the outputs for the following steps to complete the setup of your GitHub App.
+
+   ![Check the outputs](images/check-outputs.png)
+
+1. Finish your GitHub App configuration using the outputs. For example, you need to update the webhook URL to receive events from GitHub.
 
    ![Update GitHub App webhook URL](images/update-webhook-url.png)
