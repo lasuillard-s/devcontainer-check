@@ -82,31 +82,7 @@ data "vercel_project_directory" "app" {
 resource "vercel_deployment" "app" {
   project_id = vercel_project.app.id
 
-  # Because Terraform have trouble .vercelignore file with allowlist patterns,
-  # we filter unwanted files as we need
-  files = {
-    # e.g. "../../src/handlers/push.ts" = "5318~3e45ec05f69b18092d79dd6874c98cf5da16406a"
-    for key, value in data.vercel_project_directory.app.files :
-    key => value
-    if(
-      # Allowlist
-      startswith(key, "../../api/")
-      || startswith(key, "../../src/")
-      || startswith(key, "../../public/")
-      || contains([
-        "../../app.yaml",
-        "../../LICENSE",
-        "../../package-lock.json",
-        "../../package.json",
-        "../../README.md",
-        "../../tsconfig.json",
-        "../../vercel.json",
-      ], key)
-    ) &&
-    # Denylist over allowlist
-    !can(regex(".*~$|\\.log$", key))
-  }
-
+  files       = data.vercel_project_directory.app.files
   path_prefix = data.vercel_project_directory.app.path
   production  = true
 }

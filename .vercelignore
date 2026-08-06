@@ -1,5 +1,23 @@
-# NOTE: Vercel ignore file does not work with allowlist pattern :(
+**
 
-.devcontainer
-.direnv/
-.vscode
+# Allowlist
+!api
+!src
+!public
+!app.yaml
+!LICENSE
+!package-lock.json
+!package.json
+!README.md
+!tsconfig.json
+!vercel.json
+
+
+# Denylist from allowlist
+**/*~
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+**/__pycache__
+**/*.md
+**/*.rst
