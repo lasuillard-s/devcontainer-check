@@ -68,6 +68,6 @@
 		"vitest": "4.1.10"
 	},
 	"overrides": {
-		"@types/pg": "8.20.0"
+		"@types/pg": "8.20.4"
 	}
 }
