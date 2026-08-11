@@ -12,12 +12,11 @@
 !tsconfig.json
 !vercel.json
 
-
 # Denylist from allowlist
 **/*~
 **/*.log
 **/.DS_Store
 **/Thumbs.db
 **/__pycache__
-**/*.md
+src/**/*.md
 **/*.rst
