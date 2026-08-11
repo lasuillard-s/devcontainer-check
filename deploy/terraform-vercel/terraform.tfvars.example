@@ -1,12 +1,14 @@
 vercel_api_token = "vcp_..."
 
-app_id         = "0000000"
-private_key    = <<EOF
+app_slug            = "devcontainer-check"
+app_id              = "0000000"
+app_installation_id = "000000000"
+private_key         = <<EOF
 -----BEGIN RSA PRIVATE KEY-----
 blahblah
 -----END RSA PRIVATE KEY-----
 EOF
-webhook_secret = "your-webhook-secret"
+webhook_secret      = "your-webhook-secret"
 
 runner_repository             = "owner/runner"
 runner_repository_for_private = "owner/runner-private"
