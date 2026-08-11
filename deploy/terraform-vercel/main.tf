@@ -123,14 +123,16 @@ data "github_app_token" "app_token" {
 We uses `/apps/{slug}` API instead of `/app` or `/app/installation/{installation_id}` API,
 because the latter two APIs do not work with the token returned by `data.github_app_token.token`.
 
+- https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-an-app
+- https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-an-installation-for-the-authenticated-app
+
 To use the latter APIs, we would need to take additional user API tokens or personal access tokens,
 which would require additional configuration and permissions.
 
 Please feel free to suggest a better approach if you have one.
 */
 data "http" "github_app" {
-  # https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-an-app
-  # https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-an-installation-for-the-authenticated-app
+  # https://docs.github.com/en/rest/apps/apps#get-an-app
   method = "GET"
   url    = "${var.github_api_base_url}/apps/${var.app_slug}"
 
