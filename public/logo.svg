@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Dev Container Check Logo</title>
+  <title id="title">Devcontainer Check Logo</title>
   <desc id="desc">A container-inspired cube with code brackets and a check mark representing verified dev containers.</desc>
 
   <defs>

@@ -227,7 +227,7 @@
 	"workflow": {
 		"id": 254723866,
 		"node_id": "W_kwDOR2o6wM4PLsca",
-		"name": "Dev Container Check",
+		"name": "Devcontainer Check",
 		"path": ".github/workflows/devcontainer-check.yaml",
 		"state": "active",
 		"created_at": "2026-04-01T07:32:13.000Z",

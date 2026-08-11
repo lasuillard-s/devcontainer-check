@@ -22,7 +22,7 @@ export const AppConfig = z.object({
 		.transform(Repo.fromFullName)
 		.optional(),
 	/** Set to true to allow dispatching private target repositories to the public runner when no private runner repository is configured. Off by default. */
-	USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES: z.string().optional().transform(toBoolean),
+	RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE: z.string().optional().transform(toBoolean),
 	/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
 	CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
 	/** Reference for the workflow dispatch event. Defaults to the default branch of the runner repository. */

@@ -1,4 +1,4 @@
-name: Dev Container Check
+name: Devcontainer Check
 run-name: Check ${{ inputs.owner }}/${{ inputs.repo }}@${{ inputs.sha }}
 
 on:

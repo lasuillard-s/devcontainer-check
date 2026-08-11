@@ -11,7 +11,7 @@
 # https://developer.github.com/apps/building-github-apps/creating-github-apps-from-a-manifest/
 
 # The name of the GitHub App. Defaults to the name specified in package.json
-name: Dev Container Check
+name: Devcontainer Check
 
 # The homepage of your GitHub App.
 url: https://github.com/lasuillard-s/devcontainer-check

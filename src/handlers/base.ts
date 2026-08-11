@@ -6,7 +6,7 @@ import { createWorkflowDispatch, Repo } from '../octokit.js';
 import { errorToString } from '../utils.js';
 import type { WorkflowInputs } from './types.js';
 
-export const CHECK_RUN_NAME = 'Dev Container Check';
+export const CHECK_RUN_NAME = 'Devcontainer Check';
 
 /**
  * Base class for webhook event handlers.
@@ -51,7 +51,7 @@ export abstract class BaseHandler<C extends Context = Context> {
 	 *
 	 * Public targets use `RUNNER_REPOSITORY`. Private or internal targets use
 	 * `RUNNER_REPOSITORY_FOR_PRIVATE` when configured; when it is not set, a warning is logged
-	 * and `null` is returned so the caller skips dispatching. The `USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES`
+	 * and `null` is returned so the caller skips dispatching. The `RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE`
 	 * toggle overrides this guardrail and dispatches private/internal targets to the public runner instead.
 	 * @param repo The target repository the check is for
 	 * @param visibility Visibility of the target repository ('public', 'private', or 'internal')
@@ -76,15 +76,15 @@ export abstract class BaseHandler<C extends Context = Context> {
 		}
 
 		// No private runner configured: fall back to the public runner when the guardrail is disabled.
-		if (this.appConfig.USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES) {
+		if (this.appConfig.RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE) {
 			this.log.warn(
-				`No private runner configured for target ${repo.toFullName()} (${visibility}); dispatching to the public runner (USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES).`
+				`No private runner configured for target ${repo.toFullName()} (${visibility}); dispatching to the public runner (RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE).`
 			);
 			return this.appConfig.RUNNER_REPOSITORY;
 		}
 
 		this.log.warn(
-			`No matching runner found for target ${repo.toFullName()} (${visibility}); set RUNNER_REPOSITORY_FOR_PRIVATE, or USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES, to enable checks for ${visibility} repositories.`
+			`No matching runner found for target ${repo.toFullName()} (${visibility}); set RUNNER_REPOSITORY_FOR_PRIVATE, or RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE, to enable checks for ${visibility} repositories.`
 		);
 		return null;
 	}

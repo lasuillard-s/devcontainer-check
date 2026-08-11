@@ -58,10 +58,10 @@ describe('BaseHandler.getRunnerFor', () => {
 		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toBeNull();
 	});
 
-	it('uses the public runner for a private target when USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES is set', ({
+	it('uses the public runner for a private target when RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE is set', ({
 		probot
 	}) => {
-		vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', 'true');
+		vi.stubEnv('RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE', 'true');
 		const handler = makeHandler(probot);
 		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'private')).toEqual(
 			new Repo('acme', 'runner')
@@ -81,10 +81,10 @@ describe('BaseHandler.getRunnerFor', () => {
 		);
 	});
 
-	it('uses the public runner for an internal target when USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES is set', ({
+	it('uses the public runner for an internal target when RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE is set', ({
 		probot
 	}) => {
-		vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', 'true');
+		vi.stubEnv('RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE', 'true');
 		const handler = makeHandler(probot);
 		expect(handler.getRunnerFor(new Repo('owner', 'repo'), 'internal')).toEqual(
 			new Repo('acme', 'runner')
