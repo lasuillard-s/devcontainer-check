@@ -123,7 +123,7 @@ data "github_app_token" "app_token" {
 We use `/apps/{slug}` API instead of `/app` or `/app/installations/{installation_id}` API,
 because the latter two APIs do not work with the token returned by `data.github_app_token.app_token.token`.
 
-- https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-an-app
+- https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-the-authenticated-app
 - https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-an-installation-for-the-authenticated-app
 
 To use the latter APIs, we would need to take additional user API tokens or personal access tokens,
@@ -132,25 +132,27 @@ which would require additional configuration and permissions.
 Please feel free to suggest a better approach if you have one.
 */
 data "http" "github_app" {
-  # https://docs.github.com/en/rest/apps/apps#get-an-app
+  # https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-an-app
   method = "GET"
   url    = "${var.github_api_base_url}/apps/${var.app_slug}"
 
   request_headers = {
     "Accept"               = "application/vnd.github+json"
-    "Authorization"        = "Bearer ${data.github_app_token.app_token.token}"
+    "Authorization"        = sensitive("Bearer ${data.github_app_token.app_token.token}")
     "X-GitHub-Api-Version" = "2026-03-10"
   }
 }
 
+# WARNING: We only fetch the first 100 repositories accessible to the app installation (no filtering supported).
+#          If we need to support more than 100 repositories, we would need to implement pagination.
 data "http" "github_app_installation" {
-  # https://docs.github.com/en/rest/apps/installations?apiVersion=2022-11-28#list-repositories-accessible-to-the-app-installation
+  # https://docs.github.com/en/rest/apps/installations?apiVersion=2026-03-10#list-repositories-accessible-to-the-app-installation
   method = "GET"
-  url    = "${var.github_api_base_url}/installation/repositories"
+  url    = "${var.github_api_base_url}/installation/repositories?per_page=100"
 
   request_headers = {
     "Accept"               = "application/vnd.github+json"
-    "Authorization"        = "Bearer ${data.github_app_token.app_token.token}"
+    "Authorization"        = sensitive("Bearer ${data.github_app_token.app_token.token}")
     "X-GitHub-Api-Version" = "2026-03-10"
   }
 }
