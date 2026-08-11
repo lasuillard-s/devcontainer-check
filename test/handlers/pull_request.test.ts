@@ -58,7 +58,7 @@ describe('pull_request.opened event', () => {
 			.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 				expect(body).toStrictEqual({
 					head_sha: sha,
-					name: 'Dev Container Check',
+					name: 'Devcontainer Check',
 					status: 'in_progress',
 					details_url: workflowRunUrl,
 					output: {
@@ -91,7 +91,7 @@ describe('pull_request.opened event', () => {
 			.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 				expect(body).toStrictEqual({
 					head_sha: sha,
-					name: 'Dev Container Check',
+					name: 'Devcontainer Check',
 					status: 'completed',
 					conclusion: 'success',
 					output: {
@@ -150,9 +150,9 @@ describe('pull_request.opened event', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		describe('when USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES is true', () => {
+		describe('when RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE is true', () => {
 			beforeEach(() => {
-				vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', 'true');
+				vi.stubEnv('RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE', 'true');
 			});
 
 			it('dispatches to the public runner for private repositories', async ({ probot }) => {
@@ -190,7 +190,7 @@ describe('pull_request.opened event', () => {
 					.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 						expect(body).toStrictEqual({
 							head_sha: sha,
-							name: 'Dev Container Check',
+							name: 'Devcontainer Check',
 							status: 'in_progress',
 							details_url: workflowRunUrl,
 							output: {
@@ -274,7 +274,7 @@ describe('pull_request.synchronize event', () => {
 			.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 				expect(body).toStrictEqual({
 					head_sha: sha,
-					name: 'Dev Container Check',
+					name: 'Devcontainer Check',
 					status: 'in_progress',
 					details_url: workflowRunUrl,
 					output: {
@@ -309,7 +309,7 @@ describe('pull_request.synchronize event', () => {
 			.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 				expect(body).toStrictEqual({
 					head_sha: sha,
-					name: 'Dev Container Check',
+					name: 'Devcontainer Check',
 					status: 'completed',
 					conclusion: 'success',
 					output: {

@@ -63,7 +63,7 @@ it('dispatches a workflow when devcontainer files are changed', async ({ probot 
 		.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 			expect(body).toStrictEqual({
 				head_sha: after,
-				name: 'Dev Container Check',
+				name: 'Devcontainer Check',
 				status: 'in_progress',
 				details_url: workflowRunUrl,
 				output: {
@@ -113,7 +113,7 @@ it('does not dispatch a workflow when no devcontainer files are changed', async 
 		.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 			expect(body).toStrictEqual({
 				head_sha: after,
-				name: 'Dev Container Check',
+				name: 'Devcontainer Check',
 				status: 'completed',
 				conclusion: 'success',
 				output: {
@@ -164,7 +164,7 @@ it('on new branch creations, compare commits with default branch', async ({ prob
 		.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 			expect(body).toStrictEqual({
 				head_sha: after,
-				name: 'Dev Container Check',
+				name: 'Devcontainer Check',
 				status: 'in_progress',
 				details_url: workflowRunUrl,
 				output: {
@@ -289,7 +289,7 @@ describe('deduplication when push has associated pull requests', () => {
 				.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: after,
-						name: 'Dev Container Check',
+						name: 'Devcontainer Check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
@@ -334,7 +334,7 @@ describe('private repository runner selection', () => {
 		beforeEach(() => {
 			vi.stubEnv('RUNNER_REPOSITORY', 'acme/public-runner');
 			vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', undefined);
-			vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', undefined);
+			vi.stubEnv('RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE', undefined);
 		});
 
 		it('dispatches workflow for public repository', async ({ probot }) => {
@@ -358,7 +358,7 @@ describe('private repository runner selection', () => {
 				.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: after,
-						name: 'Dev Container Check',
+						name: 'Devcontainer Check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
@@ -400,9 +400,9 @@ describe('private repository runner selection', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		describe('when USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES is true', () => {
+		describe('when RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE is true', () => {
 			beforeEach(() => {
-				vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', 'true');
+				vi.stubEnv('RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE', 'true');
 			});
 
 			it('dispatches workflow for private repository using the public runner', async ({
@@ -428,7 +428,7 @@ describe('private repository runner selection', () => {
 					.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 						expect(body).toStrictEqual({
 							head_sha: after,
-							name: 'Dev Container Check',
+							name: 'Devcontainer Check',
 							status: 'in_progress',
 							details_url: workflowRunUrl,
 							output: {
@@ -487,7 +487,7 @@ describe('private repository runner selection', () => {
 				.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: after,
-						name: 'Dev Container Check',
+						name: 'Devcontainer Check',
 						status: 'completed',
 						conclusion: 'success',
 						output: {
@@ -550,7 +550,7 @@ describe('private repository runner selection', () => {
 				.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: after,
-						name: 'Dev Container Check',
+						name: 'Devcontainer Check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
@@ -576,7 +576,7 @@ describe('private repository runner selection', () => {
 		beforeEach(() => {
 			vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
 			vi.stubEnv('RUNNER_REPOSITORY_FOR_PRIVATE', undefined);
-			vi.stubEnv('USE_PUBLIC_RUNNER_FOR_PRIVATE_REPOSITORIES', undefined);
+			vi.stubEnv('RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE', undefined);
 		});
 
 		it('skips workflow for internal repository when no private runner is configured', async ({
@@ -626,7 +626,7 @@ describe('private repository runner selection', () => {
 				.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: after,
-						name: 'Dev Container Check',
+						name: 'Devcontainer Check',
 						status: 'completed',
 						conclusion: 'failure',
 						output: {
@@ -675,7 +675,7 @@ describe('private repository runner selection', () => {
 				.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: after,
-						name: 'Dev Container Check',
+						name: 'Devcontainer Check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
@@ -717,7 +717,7 @@ describe('private repository runner selection', () => {
 				.post(`/repos/${repoFullName}/check-runs`, (body: unknown) => {
 					expect(body).toStrictEqual({
 						head_sha: after,
-						name: 'Dev Container Check',
+						name: 'Devcontainer Check',
 						status: 'in_progress',
 						details_url: workflowRunUrl,
 						output: {
