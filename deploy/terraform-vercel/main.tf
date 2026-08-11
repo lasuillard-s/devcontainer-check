@@ -120,8 +120,8 @@ data "github_app_token" "app_token" {
 }
 
 /*
-We uses `/apps/{slug}` API instead of `/app` or `/app/installation/{installation_id}` API,
-because the latter two APIs do not work with the token returned by `data.github_app_token.token`.
+We use `/apps/{slug}` API instead of `/app` or `/app/installations/{installation_id}` API,
+because the latter two APIs do not work with the token returned by `data.github_app_token.app_token.token`.
 
 - https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-an-app
 - https://docs.github.com/en/rest/apps/apps?apiVersion=2026-03-10#get-an-installation-for-the-authenticated-app
