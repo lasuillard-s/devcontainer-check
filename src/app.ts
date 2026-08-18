@@ -7,16 +7,23 @@ import WorkflowRunCompletedHandler from './handlers/workflow_run.completed.js';
 export default ((app) => {
 	const appConfig: AppConfig = loadConfig(app);
 
-	app.on('push', (context: Context<'push'>) => {
-		return new PushHandler(context, appConfig).handle();
+	app.onError((error) => {
+		app.log.error(error, 'Unhandled error occurred');
+	});
+
+	// Register event listeners
+	// NOTE: Handlers are awaited here because they are expected to handle events and wait for completion
+	//       before returning. It could be changed in future due to GitHub's ACK timeout (10s)
+	app.on('push', async (context: Context<'push'>) => {
+		await new PushHandler(context, appConfig).handle();
 	});
 	app.on(
 		['pull_request.opened', 'pull_request.synchronize'],
-		(context: Context<'pull_request'>) => {
-			return new PullRequestHandler(context, appConfig).handle();
+		async (context: Context<'pull_request'>) => {
+			await new PullRequestHandler(context, appConfig).handle();
 		}
 	);
-	app.on('workflow_run.completed', (context: Context<'workflow_run.completed'>) => {
-		return new WorkflowRunCompletedHandler(context, appConfig).handle();
+	app.on('workflow_run.completed', async (context: Context<'workflow_run.completed'>) => {
+		await new WorkflowRunCompletedHandler(context, appConfig).handle();
 	});
 }) satisfies ApplicationFunction;
