@@ -8,6 +8,13 @@ import WorkflowRunCompletedHandler from './handlers/workflow_run.completed.js';
 export default ((app) => {
 	const appConfig: AppConfig = loadConfig(app);
 
+	app.onError((error) => {
+		app.log.error(error, 'Unhandled error occurred');
+	});
+
+	// Register event listeners
+	// NOTE: Handlers are awaited here because they are expected to handle events and wait for completion
+	//       before returning. It could be changed in future due to GitHub's ACK timeout (10s)
 	app.on(
 		['installation.created', 'installation.unsuspend'],
 		async (context: Context<'installation.created' | 'installation.unsuspend'>) => {
