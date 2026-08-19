@@ -5,7 +5,13 @@ import PushHandler from './event-handlers/push.js';
 import WorkflowRunCompletedHandler from './event-handlers/workflow_run.completed.js';
 
 export default ((app) => {
-	const appConfig: AppConfig = AppConfig.parse(process.env);
+	let appConfig: AppConfig;
+	try {
+		appConfig = AppConfig.parse(process.env);
+	} catch (error) {
+		app.log.error(error, 'Failed to load application configuration');
+		process.exit(1);
+	}
 
 	app.onError((error) => {
 		app.log.error(error, 'Unhandled error occurred');

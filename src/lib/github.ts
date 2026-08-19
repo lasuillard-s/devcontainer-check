@@ -198,7 +198,7 @@ export async function fetchInputs(
 		workflowRunId,
 		artifactName
 	});
-	if (!artifactId) {
+	if (artifactId === null) {
 		return null;
 	}
 	const buffer = await downloadArtifactFile(octokit, {
