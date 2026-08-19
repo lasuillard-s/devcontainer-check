@@ -1,7 +1,7 @@
 import type { Context } from 'probot';
 import { describe, expect, it, vi } from 'vitest';
 import { AppConfig } from '../../src/config.js';
-import { BaseHandler } from '../../src/handlers/base.js';
+import { BaseHandler } from '../../src/event-handlers/base.js';
 import { Repo } from '../../src/lib/github.js';
 
 /**

@@ -1,8 +1,8 @@
 import type { ApplicationFunction, Context } from 'probot';
 import { AppConfig } from './config.js';
-import PullRequestHandler from './handlers/pull_request.js';
-import PushHandler from './handlers/push.js';
-import WorkflowRunCompletedHandler from './handlers/workflow_run.completed.js';
+import PullRequestHandler from './event-handlers/pull_request.js';
+import PushHandler from './event-handlers/push.js';
+import WorkflowRunCompletedHandler from './event-handlers/workflow_run.completed.js';
 
 export default ((app) => {
 	const appConfig: AppConfig = AppConfig.parse(process.env);

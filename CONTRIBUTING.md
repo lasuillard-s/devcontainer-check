@@ -21,7 +21,6 @@ This project uses the following tech stack:
 ### 📂 Key directory structure
 
 - `src/`: Application source code
-- `src/handlers/`: Event handlers for push and workflow completion events
 - `test/`: Unit tests and fixtures
 - `app.yaml`: GitHub App manifest
 - `flake.nix`: Nix Flake configuration for the development environment
