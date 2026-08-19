@@ -1,12 +1,8 @@
 import type { Logger } from 'pino';
 import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
-import { AppConfig, DEFAULT_BRANCH_ALIAS } from '../config.js';
-import { createWorkflowDispatch, Repo } from '../octokit.js';
-import { errorToString } from '../utils.js';
-import type { WorkflowInputs } from './types.js';
-
-export const CHECK_RUN_NAME = 'Devcontainer Check';
+import { AppConfig } from '../config.js';
+import { Repo } from '../lib/github.js';
 
 /**
  * Base class for webhook event handlers.
@@ -107,75 +103,5 @@ export abstract class BaseHandler<C extends Context = Context> {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Dispatches the check workflow to the given runner repository and creates an in-progress check run.
-	 * @param repo Repository info of the target repository
-	 * @param sha SHA of the commit to check
-	 * @param runnerRepo The runner repository to dispatch the workflow to
-	 */
-	protected async dispatchCheckWorkflow(repo: Repo, sha: string, runnerRepo: Repo): Promise<void> {
-		// Resolve runner workflow ref
-		const resolvedRunnerRefRaw = this.appConfig.CHECK_WORKFLOW_REF;
-		let runnerRef = resolvedRunnerRefRaw;
-		if (runnerRef === DEFAULT_BRANCH_ALIAS) {
-			const { data: runnerRepoDetail } = await this.octokit.rest.repos.get({
-				owner: runnerRepo.owner,
-				repo: runnerRepo.repo
-			});
-			runnerRef = runnerRepoDetail.default_branch;
-		}
-		this.log.debug(`Resolved runner ref: ${runnerRef}`);
-
-		const inputs: WorkflowInputs = { owner: repo.owner, repo: repo.repo, sha };
-		this.log.info(
-			`Triggering workflow ${this.appConfig.CHECK_WORKFLOW_NAME} in ${runnerRepo.toFullName()}@${runnerRef}` +
-				` with inputs: ${JSON.stringify(inputs)}`
-		);
-
-		// Dispatch the workflow
-		let workflowRunUrl: string | undefined;
-		try {
-			const workflowDispatchResult = await createWorkflowDispatch(this.octokit, {
-				owner: runnerRepo.owner,
-				repo: runnerRepo.repo,
-				workflow_id: this.appConfig.CHECK_WORKFLOW_NAME,
-				ref: runnerRef,
-				inputs: inputs as unknown as Record<string, unknown>,
-				return_run_details: true
-			});
-			workflowRunUrl = workflowDispatchResult?.html_url;
-		} catch (error) {
-			this.log.error(`Failed to dispatch workflow: ${errorToString(error)}`);
-			await this.octokit.rest.checks.create({
-				owner: repo.owner,
-				repo: repo.repo,
-				head_sha: sha,
-				name: CHECK_RUN_NAME,
-				status: 'completed',
-				conclusion: 'failure',
-				output: {
-					title: 'Dev container configuration check failed to start.',
-					summary: `Failed to dispatch the validation workflow: ${errorToString(error)}`
-				}
-			});
-			return;
-		}
-
-		// Create a check run in progress with a link to the workflow run
-		await this.octokit.rest.checks.create({
-			owner: repo.owner,
-			repo: repo.repo,
-			head_sha: sha,
-			name: CHECK_RUN_NAME,
-			status: 'in_progress',
-			details_url: workflowRunUrl,
-			output: {
-				title: 'Checking for dev container configuration...',
-				summary: 'Check is in progress. This might take a few minutes.'
-			}
-		});
-		this.log.info('Workflow dispatch event created successfully.');
 	}
 }

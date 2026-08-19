@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { Repo } from './octokit.js';
+import { Repo } from './lib/github.js';
 
 export const DEFAULT_BRANCH_ALIAS = '~DEFAULT_BRANCH';
 

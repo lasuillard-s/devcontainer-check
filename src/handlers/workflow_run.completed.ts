@@ -1,9 +1,8 @@
 import path from 'node:path';
 import { Context } from 'probot';
-import { downloadArtifactFile, findArtifactByName, Repo } from '../octokit.js';
-import { errorToString } from '../utils.js';
-import { BaseHandler, CHECK_RUN_NAME } from './base.js';
-import type { WorkflowInputs } from './types.js';
+import { CHECK_RUN_NAME } from '../constants.js';
+import { fetchInputs, Repo } from '../lib/github.js';
+import { BaseHandler } from './base.js';
 
 /**
  * Handler for workflow run completed events on the runner repository.
@@ -37,7 +36,12 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 		}
 
 		// Find artifact that contains the workflow inputs to determine which repository and ref this workflow run is associated with
-		const inputs = await this.fetchInputs(repo, payload.workflow_run.id);
+		const inputs = await fetchInputs(this.octokit, {
+			repo,
+			workflowRunId: payload.workflow_run.id,
+			artifactName: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME,
+			artifactPath: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH
+		});
 		if (!inputs) {
 			return;
 		}
@@ -65,42 +69,5 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 		this.log.info(
 			`Commit status updated based on workflow run conclusion: ${payload.workflow_run.conclusion}`
 		);
-	}
-
-	/**
-	 * Fetches and parses workflow inputs from a GitHub Actions artifact.
-	 * @param repo Repository info with owner and repo name
-	 * @param workflowRunId ID of the workflow run
-	 * @returns The parsed workflow inputs, or null if retrieval failed
-	 */
-	private async fetchInputs(repo: Repo, workflowRunId: number): Promise<WorkflowInputs | null> {
-		const artifactId = await findArtifactByName(this.octokit, {
-			repo,
-			workflowRunId,
-			artifactName: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME
-		});
-		if (!artifactId) {
-			this.log.error('Failed to find workflow inputs artifact.');
-			return null;
-		}
-		const buffer = await downloadArtifactFile(this.octokit, {
-			repo,
-			artifactId,
-			filePath: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH
-		});
-		if (!buffer) {
-			this.log.error('Failed to download workflow inputs artifact file.');
-			return null;
-		}
-		try {
-			return JSON.parse(buffer.toString('utf-8')) as WorkflowInputs;
-		} catch (error) {
-			throw new Error(
-				`Failed to parse workflow inputs from artifact file: ${errorToString(error)}`,
-				{
-					cause: error
-				}
-			);
-		}
 	}
 }

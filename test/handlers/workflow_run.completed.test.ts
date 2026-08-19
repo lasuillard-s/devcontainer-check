@@ -1,7 +1,7 @@
 import AdmZip from 'adm-zip';
 import nock from 'nock';
 import { beforeEach, describe, expect, vi } from 'vitest';
-import type { WorkflowInputs } from '../../src/handlers/types.js';
+import type { WorkflowInputs } from '../../src/lib/github.js';
 import payload from '../fixtures/workflow_run.completed.json' with { type: 'json' };
 import { test as it } from '../helpers.js';
 

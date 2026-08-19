@@ -2,7 +2,7 @@ import type { Context } from 'probot';
 import { describe, expect, it, vi } from 'vitest';
 import { AppConfig } from '../../src/config.js';
 import { BaseHandler } from '../../src/handlers/base.js';
-import { Repo } from '../../src/octokit.js';
+import { Repo } from '../../src/lib/github.js';
 
 /**
  * Minimal concrete subclass used to exercise the shared helpers on BaseHandler.

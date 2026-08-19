@@ -1,9 +1,10 @@
 import { Context } from 'probot';
 import { DEFAULT_BRANCH_ALIAS } from '../config.js';
-import { isDevContainerFileChanged } from '../devcontainer.js';
-import { Repo } from '../octokit.js';
-import { matchPatterns } from '../utils.js';
-import { BaseHandler, CHECK_RUN_NAME } from './base.js';
+import { CHECK_RUN_NAME } from '../constants.js';
+import { isDevContainerFileChanged } from '../lib/devcontainer.js';
+import { dispatchCheckWorkflow, Repo } from '../lib/github.js';
+import { matchPatterns } from '../utils/string.js';
+import { BaseHandler } from './base.js';
 
 /**
  * Handler for pull_request events on the target repository.
@@ -66,7 +67,13 @@ export default class PullRequestHandler extends BaseHandler<Context<'pull_reques
 		}
 
 		// If devcontainer-related changes are detected, trigger the workflow dispatch event
-		await this.dispatchCheckWorkflow(repo, sha, runnerRepo);
+		await dispatchCheckWorkflow(this.context, {
+			repo,
+			sha,
+			runnerRepo,
+			workflowName: this.appConfig.CHECK_WORKFLOW_NAME,
+			workflowRef: this.appConfig.CHECK_WORKFLOW_REF
+		});
 	}
 
 	/**
