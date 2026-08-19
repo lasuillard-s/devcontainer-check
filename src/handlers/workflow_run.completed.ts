@@ -1,7 +1,6 @@
-import AdmZip from 'adm-zip';
 import path from 'node:path';
 import { Context } from 'probot';
-import { Repo } from '../octokit.js';
+import { downloadArtifactFile, findArtifactByName, Repo } from '../octokit.js';
 import { errorToString } from '../utils.js';
 import { BaseHandler, CHECK_RUN_NAME } from './base.js';
 import type { WorkflowInputs } from './types.js';
@@ -75,7 +74,7 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 	 * @returns The parsed workflow inputs, or null if retrieval failed
 	 */
 	private async fetchInputs(repo: Repo, workflowRunId: number): Promise<WorkflowInputs | null> {
-		const artifactId = await this.findArtifactByName({
+		const artifactId = await findArtifactByName(this.octokit, {
 			repo,
 			workflowRunId,
 			artifactName: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME
@@ -84,7 +83,7 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 			this.log.error('Failed to find workflow inputs artifact.');
 			return null;
 		}
-		const buffer = await this.downloadArtifactFile({
+		const buffer = await downloadArtifactFile(this.octokit, {
 			repo,
 			artifactId,
 			filePath: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH
@@ -103,73 +102,5 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 				}
 			);
 		}
-	}
-
-	/**
-	 * Finds a workflow run artifact by name.
-	 * @param params Parameters for the artifact search
-	 * @param params.repo Repository info with owner and repo name
-	 * @param params.workflowRunId ID of the workflow run to get artifacts from
-	 * @param params.artifactName Name of the artifact to find
-	 * @returns The matching artifact ID, or null if not found
-	 */
-	protected async findArtifactByName(params: {
-		repo: Repo;
-		workflowRunId: number;
-		artifactName: string;
-	}): Promise<number | null> {
-		const { repo, workflowRunId, artifactName } = params;
-		let allArtifacts: { data: { artifacts: { id: number; name: string }[] } };
-		try {
-			const response = await this.octokit.rest.actions.listWorkflowRunArtifacts({
-				owner: repo.owner,
-				repo: repo.repo,
-				run_id: workflowRunId
-			});
-			allArtifacts = response;
-		} catch (error) {
-			this.log.error(`Failed to list workflow run artifacts: ${errorToString(error)}`);
-			return null;
-		}
-		return allArtifacts.data.artifacts.find((a) => a.name === artifactName)?.id ?? null;
-	}
-
-	/**
-	 * Downloads an artifact zip and extracts the content of a specific file from it.
-	 * @param params Parameters for the artifact download
-	 * @param params.repo Repository info with owner and repo name
-	 * @param params.artifactId ID of the artifact to download
-	 * @param params.filePath Path to the file within the artifact to retrieve
-	 * @returns The file content as a Buffer, or null if not found
-	 */
-	protected async downloadArtifactFile(params: {
-		repo: Repo;
-		artifactId: number;
-		filePath: string;
-	}): Promise<Buffer | null> {
-		const { repo, artifactId, filePath } = params;
-		let downloadResponse: { data: ArrayBuffer };
-		try {
-			const response = await this.octokit.rest.actions.downloadArtifact({
-				owner: repo.owner,
-				repo: repo.repo,
-				artifact_id: artifactId,
-				archive_format: 'zip',
-				request: {
-					redirect: 'follow'
-				}
-			});
-			downloadResponse = response as unknown as { data: ArrayBuffer };
-		} catch (error) {
-			this.log.error(`Failed to download artifact: ${errorToString(error)}`);
-			return null;
-		}
-		const buffer = Buffer.from(downloadResponse.data);
-		const zip = new AdmZip(buffer);
-		const file = zip.getEntries().find((entry) => entry.entryName === filePath);
-		if (!file) {
-			return null;
-		}
-		return file.getData();
 	}
 }

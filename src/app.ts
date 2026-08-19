@@ -1,11 +1,11 @@
 import type { ApplicationFunction, Context } from 'probot';
-import { type AppConfig, loadConfig } from './config.js';
+import { AppConfig } from './config.js';
 import PullRequestHandler from './handlers/pull_request.js';
 import PushHandler from './handlers/push.js';
 import WorkflowRunCompletedHandler from './handlers/workflow_run.completed.js';
 
 export default ((app) => {
-	const appConfig: AppConfig = loadConfig(app);
+	const appConfig: AppConfig = AppConfig.parse(process.env);
 
 	app.onError((error) => {
 		app.log.error(error, 'Unhandled error occurred');
