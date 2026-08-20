@@ -31,11 +31,11 @@ sequenceDiagram
 	target ->> server: Event (push)
 	server ->> server: Check branch filters and changed files
 	server ->> runner: Trigger workflow (workflow_dispatch)
-	server ->> target: Update commit statuses (pending)
+	server ->> target: Create Check Run (in_progress)
 	runner ->> target: Checkout repository
 	runner ->> runner: Check dev container configuration
 	runner ->> server: Event (workflow_run.completed)
-	server ->> target: Update commit statuses (success or failure)
+	server ->> target: Update Check Run (completed)
 ```
 
 - The app only processes push events on branches that match `PUSH_BRANCHES`, or push events whose commits are associated with pull requests whose base branch matches `PR_BRANCHES`.
