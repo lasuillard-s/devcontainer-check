@@ -259,10 +259,10 @@ export async function dispatchCheckWorkflow(
 		});
 		runnerRef = runnerRepoDetail.default_branch;
 	}
-	log?.debug(`Resolved runner ref: ${runnerRef}`);
+	log.debug(`Resolved runner ref: ${runnerRef}`);
 
 	const inputs: WorkflowInputs = { owner: repo.owner, repo: repo.repo, sha };
-	log?.info(
+	log.info(
 		`Triggering workflow ${workflowName} in ${runnerRepo.toFullName()}@${runnerRef}` +
 			` with inputs: ${JSON.stringify(inputs)}`
 	);
@@ -280,7 +280,7 @@ export async function dispatchCheckWorkflow(
 		});
 		workflowRunUrl = workflowDispatchResult?.html_url;
 	} catch (error) {
-		log?.error(`Failed to dispatch workflow: ${errorToString(error)}`);
+		log.error(`Failed to dispatch workflow: ${errorToString(error)}`);
 		await octokit.rest.checks.create({
 			owner: repo.owner,
 			repo: repo.repo,
@@ -309,5 +309,5 @@ export async function dispatchCheckWorkflow(
 			summary: 'Check is in progress. This might take a few minutes.'
 		}
 	});
-	log?.info('Workflow dispatch event created successfully.');
+	log.info('Workflow dispatch event created successfully.');
 }
