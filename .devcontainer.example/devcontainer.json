@@ -16,7 +16,7 @@
 				"esbenp.prettier-vscode",
 				"editorconfig.editorconfig",
 				"vitest.explorer",
-				"opentofu.vscode-opentofu"
+				"HashiCorp.terraform"
 			]
 		}
 	}
