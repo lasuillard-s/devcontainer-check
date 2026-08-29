@@ -10,20 +10,20 @@ export default ((app) => {
 
 	app.on(
 		['installation.created', 'installation.unsuspend'],
-		(context: Context<'installation.created' | 'installation.unsuspend'>) => {
-			return new InstallationHandler(context, appConfig, app).handle();
+		async (context: Context<'installation.created' | 'installation.unsuspend'>) => {
+			await new InstallationHandler(context, appConfig, app).handle();
 		}
 	);
-	app.on('push', (context: Context<'push'>) => {
-		return new PushHandler(context, appConfig).handle();
+	app.on('push', async (context: Context<'push'>) => {
+		await new PushHandler(context, appConfig).handle();
 	});
 	app.on(
 		['pull_request.opened', 'pull_request.synchronize'],
-		(context: Context<'pull_request'>) => {
-			return new PullRequestHandler(context, appConfig).handle();
+		async (context: Context<'pull_request'>) => {
+			await new PullRequestHandler(context, appConfig).handle();
 		}
 	);
-	app.on('workflow_run.completed', (context: Context<'workflow_run.completed'>) => {
-		return new WorkflowRunCompletedHandler(context, appConfig).handle();
+	app.on('workflow_run.completed', async (context: Context<'workflow_run.completed'>) => {
+		await new WorkflowRunCompletedHandler(context, appConfig).handle();
 	});
 }) satisfies ApplicationFunction;
