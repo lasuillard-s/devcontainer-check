@@ -1,6 +1,6 @@
 # ❤️‍🔥 Contributing to this project
 
-Thank you for your interest in contributing to **devcontainer-check**.
+Thank you for your interest in contributing to **Devcontainer Check**.
 
 ## 🐛 Reporting issues
 

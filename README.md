@@ -1,4 +1,4 @@
-# devcontainer-check
+# Devcontainer Check
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/lasuillard-s/devcontainer-check/graph/badge.svg?token=7k6RoJEdWj)](https://codecov.io/gh/lasuillard-s/devcontainer-check)
@@ -11,10 +11,10 @@ A GitHub App that automates validation of your repository's Dev Container.
 
 ## ✨ Features
 
-devcontainer-check is a TypeScript-based Probot app with these features:
+Devcontainer Check is a TypeScript-based Probot app with these features:
 
-- **Detect dev container changes** in `.devcontainer/` and `.devcontainer.example/`
-- **Offload validation workflows** to a separate runner repository when dev container files change
+- **Detect Dev Container changes** in `.devcontainer/` and `.devcontainer.example/`
+- **Offload validation workflows** to a separate runner repository when Dev Container files change
 - **Update commit statuses** on the target repository when the runner workflow completes
 - **Support visibility-specific runners** for public and private repositories
 
@@ -40,7 +40,7 @@ sequenceDiagram
 
 - The app only processes push events on branches that match `PUSH_BRANCHES`, or push events whose commits are associated with pull requests whose base branch matches `PR_BRANCHES`.
 - When `.devcontainer/` or `.devcontainer.example/` changes, the app dispatches the configured runner workflow and marks the commit as pending.
-- When no dev container files change, the app marks the commit as successful without dispatching a workflow.
+- When no Dev Container files change, the app marks the commit as successful without dispatching a workflow.
 - Runner selection can vary by repository visibility through `RUNNER_REPOSITORY_FOR_PRIVATE` and `RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE`.
 
 ## ⌨️ Registering the GitHub App
