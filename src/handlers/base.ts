@@ -29,17 +29,7 @@ export abstract class BaseHandler<C extends Context = Context> {
 		this.context = context;
 		this.appConfig = appConfig;
 		this.octokit = context.octokit;
-
-		// TODO: REVERT THIS
-		// @ts-expect-error Use console logger to verify issue Pino logger in Vercel environment
-		this.log = {
-			trace: console.trace,
-			debug: console.debug,
-			info: console.info,
-			warn: console.warn,
-			error: console.error,
-			fatal: console.error
-		};
+		this.log = context.log;
 	}
 
 	/**
