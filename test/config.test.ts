@@ -27,7 +27,8 @@ describe('loadConfig', () => {
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'workflow-inputs',
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: 'inputs.json',
 			PUSH_BRANCHES: [DEFAULT_BRANCH_ALIAS],
-			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS]
+			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS],
+			ALLOWED_PRINCIPALS: []
 		});
 	});
 
@@ -42,6 +43,7 @@ describe('loadConfig', () => {
 		vi.stubEnv('CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH', 'my-inputs.json');
 		vi.stubEnv('PUSH_BRANCHES', 'main,develop');
 		vi.stubEnv('PR_BRANCHES', 'feature/*');
+		vi.stubEnv('ALLOWED_PRINCIPALS', ' Alice, Bob , org-1 ');
 
 		// Act & Assert
 		const config = loadConfig(probot);
@@ -54,7 +56,8 @@ describe('loadConfig', () => {
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'my-workflow-inputs',
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: 'my-inputs.json',
 			PUSH_BRANCHES: ['main', 'develop'],
-			PR_BRANCHES: ['feature/*']
+			PR_BRANCHES: ['feature/*'],
+			ALLOWED_PRINCIPALS: ['alice', 'bob', 'org-1']
 		});
 	});
 
@@ -82,12 +85,14 @@ describe('loadConfig', () => {
 		expect(() => loadConfig(probot)).toThrow();
 	});
 
-	it('defaults PUSH_BRANCHES and PR_BRANCHES to empty array when set to empty string', () => {
+	it('defaults PUSH_BRANCHES, PR_BRANCHES, and ALLOWED_PRINCIPALS to empty array when set to empty string', () => {
 		vi.stubEnv('RUNNER_REPOSITORY', 'acme/runner');
 		vi.stubEnv('PUSH_BRANCHES', '');
 		vi.stubEnv('PR_BRANCHES', '');
+		vi.stubEnv('ALLOWED_PRINCIPALS', '');
 		const config = loadConfig(probot);
 		expect(config.PUSH_BRANCHES).toStrictEqual([]);
 		expect(config.PR_BRANCHES).toStrictEqual([]);
+		expect(config.ALLOWED_PRINCIPALS).toStrictEqual([]);
 	});
 });
