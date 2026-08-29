@@ -27,10 +27,10 @@ export default class InstallationHandler extends BaseHandler<
 	async handle(): Promise<void> {
 		const allowedPrincipals = this.appConfig.ALLOWED_PRINCIPALS;
 
-		// If ALLOWED_PRINCIPALS is not configured, skip the access control check.
-		if (allowedPrincipals.length === 0) {
+		// If ALLOWED_PRINCIPALS is not configured or set to allow-all ('*'), skip the access control check.
+		if (allowedPrincipals.length === 0 || allowedPrincipals.includes('*')) {
 			this.log.debug(
-				'ALLOWED_PRINCIPALS is not configured; skipping installation access control check.'
+				'ALLOWED_PRINCIPALS is not configured or set to allow-all; skipping installation access control check.'
 			);
 			return;
 		}
@@ -38,31 +38,45 @@ export default class InstallationHandler extends BaseHandler<
 		// Check the principal of the installation against the allowed principals list.
 		const principal = this.getPrincipal();
 		const installationId = this.context.payload.installation.id;
+		const action = this.context.payload.action;
+
 		if (!principal) {
-			this.log.warn(`Installation ${installationId} has no recognizable account login; skipping.`);
+			this.log.warn(
+				`Installation ${installationId} has no recognizable account login; treating as unauthorized and uninstalling...`
+			);
+			await this.uninstallInstallation(installationId, 'unknown');
 			return;
 		}
 
 		if (!allowedPrincipals.includes(principal)) {
 			this.log.warn(
-				`Installation ${installationId} created by unauthorized principal: "${principal}". Uninstalling...`
+				`Installation ${installationId} ${action} by unauthorized principal: "${principal}". Uninstalling...`
 			);
-			try {
-				const appOctokit = await this.app.auth();
-				await appOctokit.rest.apps.deleteInstallation({
-					installation_id: installationId
-				});
-				this.log.info(
-					`Deleted installation ${installationId} for unauthorized principal: "${principal}".`
-				);
-			} catch (error) {
-				this.log.error(
-					`Failed to delete installation ${installationId} for unauthorized principal "${principal}": ${errorToString(error)}`
-				);
-			}
+			await this.uninstallInstallation(installationId, principal);
 		} else {
 			this.log.info(
-				`Installation ${installationId} created by authorized principal: "${principal}".`
+				`Installation ${installationId} ${action} by authorized principal: "${principal}".`
+			);
+		}
+	}
+
+	/**
+	 * Uninstalls the GitHub app for a given installation ID.
+	 * @param installationId The ID of the installation to delete
+	 * @param principal Label used for logging (e.g. principal login or 'unknown')
+	 */
+	private async uninstallInstallation(installationId: number, principal: string): Promise<void> {
+		try {
+			const appOctokit = await this.app.auth();
+			await appOctokit.rest.apps.deleteInstallation({
+				installation_id: installationId
+			});
+			this.log.info(
+				`Deleted installation ${installationId} for unauthorized principal: "${principal}".`
+			);
+		} catch (error) {
+			this.log.error(
+				`Failed to delete installation ${installationId} for unauthorized principal "${principal}": ${errorToString(error)}`
 			);
 		}
 	}

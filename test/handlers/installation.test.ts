@@ -34,6 +34,23 @@ describe('installation events access control', () => {
 		});
 	});
 
+	describe("when ALLOWED_PRINCIPALS is set to '*' (allow-all)", () => {
+		beforeEach(() => {
+			vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
+			vi.stubEnv('ALLOWED_PRINCIPALS', '*');
+		});
+
+		it('allows installation on installation.created', async ({ probot }) => {
+			const mock = nock('https://api.github.com');
+
+			// @ts-expect-error Ignore fixture type mismatch
+			await probot.receive({ id: '', name: 'installation', payload: createdPayload });
+
+			expect(mock.isDone()).toBe(true);
+			expect(mock.pendingMocks()).toStrictEqual([]);
+		});
+	});
+
 	describe('when ALLOWED_PRINCIPALS contains authorized principals', () => {
 		beforeEach(() => {
 			vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
@@ -120,11 +137,13 @@ describe('installation events access control', () => {
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
 
-		it('skips access control when account login is missing', async ({ probot }) => {
+		it('uninstalls app when account login is unrecognizable', async ({ probot }) => {
 			const payloadWithoutLogin = structuredClone(createdPayload) as Record<string, unknown>;
 			(payloadWithoutLogin.installation as Record<string, unknown>).account = null;
 
-			const mock = nock('https://api.github.com');
+			const mock = nock('https://api.github.com')
+				.delete(`/app/installations/${installationId}`)
+				.reply(204);
 
 			// @ts-expect-error Ignore fixture type mismatch
 			await probot.receive({ id: '', name: 'installation', payload: payloadWithoutLogin });
