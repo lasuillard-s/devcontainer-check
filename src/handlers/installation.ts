@@ -27,10 +27,10 @@ export default class InstallationHandler extends BaseHandler<
 	async handle(): Promise<void> {
 		const allowedPrincipals = this.appConfig.ALLOWED_PRINCIPALS;
 
-		// If ALLOWED_PRINCIPALS is not configured or set to allow-all ('*'), skip the access control check.
-		if (allowedPrincipals.length === 0 || allowedPrincipals.includes('*')) {
+		// If ALLOWED_PRINCIPALS is set to allow-all ('*'), skip the access control check.
+		if (allowedPrincipals.includes('*')) {
 			this.log.debug(
-				'ALLOWED_PRINCIPALS is not configured or set to allow-all; skipping installation access control check.'
+				'ALLOWED_PRINCIPALS is set to allow-all; skipping installation access control check.'
 			);
 			return;
 		}

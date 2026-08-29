@@ -28,7 +28,7 @@ describe('loadConfig', () => {
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: 'inputs.json',
 			PUSH_BRANCHES: [DEFAULT_BRANCH_ALIAS],
 			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS],
-			ALLOWED_PRINCIPALS: []
+			ALLOWED_PRINCIPALS: ['*']
 		});
 	});
 

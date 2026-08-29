@@ -51,6 +51,25 @@ describe('installation events access control', () => {
 		});
 	});
 
+	describe('when ALLOWED_PRINCIPALS is explicitly empty', () => {
+		beforeEach(() => {
+			vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');
+			vi.stubEnv('ALLOWED_PRINCIPALS', '');
+		});
+
+		it('uninstalls app on installation.created', async ({ probot }) => {
+			const mock = nock('https://api.github.com')
+				.delete(`/app/installations/${installationId}`)
+				.reply(204);
+
+			// @ts-expect-error Ignore fixture type mismatch
+			await probot.receive({ id: '', name: 'installation', payload: createdPayload });
+
+			expect(mock.isDone()).toBe(true);
+			expect(mock.pendingMocks()).toStrictEqual([]);
+		});
+	});
+
 	describe('when ALLOWED_PRINCIPALS contains authorized principals', () => {
 		beforeEach(() => {
 			vi.stubEnv('RUNNER_REPOSITORY', 'acme/devcontainer-check-runner');

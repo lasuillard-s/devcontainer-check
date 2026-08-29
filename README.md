@@ -78,7 +78,7 @@ The most important environment variables are below. See [`.env.example`](./.env.
 | `CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH`      | Workflow inputs file path inside the artifact. Defaults to `inputs.json`.                                        |
 | `PUSH_BRANCHES`                            | Comma-separated push branch patterns. Defaults to `~DEFAULT_BRANCH`.                                             |
 | `PR_BRANCHES`                              | Comma-separated pull request base branch patterns. Defaults to `~DEFAULT_BRANCH`.                                |
-| `ALLOWED_PRINCIPALS`                       | Comma-separated list of allowed principals (users/orgs). If unset or empty, all principals are allowed.          |
+| `ALLOWED_PRINCIPALS`                       | Comma-separated list of allowed principals (users/orgs). Defaults to `*` (all principals allowed). If explicitly empty, all installations are rejected. |
 
 ## ⚠️ Limitations
 
