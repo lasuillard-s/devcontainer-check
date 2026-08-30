@@ -63,21 +63,22 @@ This app is configured for Vercel through [`vercel.json`](./vercel.json). This p
 
 The most important environment variables are below. See [`.env.example`](./.env.example) and [`src/config.ts`](./src/config.ts) for the full list and defaults.
 
-| Key                                        | Description                                                                                                      |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `APP_ID`                                   | GitHub App ID.                                                                                                   |
-| `PRIVATE_KEY`                              | GitHub App private key.                                                                                          |
-| `WEBHOOK_SECRET`                           | GitHub webhook secret.                                                                                           |
-| `WEBHOOK_PROXY_URL`                        | Optional local webhook proxy URL.                                                                                |
-| `RUNNER_REPOSITORY`                        | Required runner repository in `owner/repo` format, used for public (or unknown-visibility) target repositories.  |
-| `RUNNER_REPOSITORY_FOR_PRIVATE`            | Optional runner repository used for private target repositories.                                                 |
-| `RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE` | Set to `true` to dispatch private targets to the public runner when no private runner is configured.             |
-| `CHECK_WORKFLOW_NAME`                      | Workflow file name to dispatch. Defaults to `devcontainer-check.yaml`.                                           |
-| `CHECK_WORKFLOW_REF`                       | Workflow ref to dispatch. Defaults to `~DEFAULT_BRANCH`, which resolves to the runner repository default branch. |
-| `CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME`      | Workflow inputs artifact name. Defaults to `workflow-inputs`.                                                    |
-| `CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH`      | Workflow inputs file path inside the artifact. Defaults to `inputs.json`.                                        |
-| `PUSH_BRANCHES`                            | Comma-separated push branch patterns. Defaults to `~DEFAULT_BRANCH`.                                             |
-| `PR_BRANCHES`                              | Comma-separated pull request base branch patterns. Defaults to `~DEFAULT_BRANCH`.                                |
+| Key                                        | Description                                                                                                                                             |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_ID`                                   | GitHub App ID.                                                                                                                                          |
+| `PRIVATE_KEY`                              | GitHub App private key.                                                                                                                                 |
+| `WEBHOOK_SECRET`                           | GitHub webhook secret.                                                                                                                                  |
+| `WEBHOOK_PROXY_URL`                        | Optional local webhook proxy URL.                                                                                                                       |
+| `RUNNER_REPOSITORY`                        | Required runner repository in `owner/repo` format, used for public (or unknown-visibility) target repositories.                                         |
+| `RUNNER_REPOSITORY_FOR_PRIVATE`            | Optional runner repository used for private target repositories.                                                                                        |
+| `RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE` | Set to `true` to dispatch private targets to the public runner when no private runner is configured.                                                    |
+| `CHECK_WORKFLOW_NAME`                      | Workflow file name to dispatch. Defaults to `devcontainer-check.yaml`.                                                                                  |
+| `CHECK_WORKFLOW_REF`                       | Workflow ref to dispatch. Defaults to `~DEFAULT_BRANCH`, which resolves to the runner repository default branch.                                        |
+| `CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME`      | Workflow inputs artifact name. Defaults to `workflow-inputs`.                                                                                           |
+| `CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH`      | Workflow inputs file path inside the artifact. Defaults to `inputs.json`.                                                                               |
+| `PUSH_BRANCHES`                            | Comma-separated push branch patterns. Defaults to `~DEFAULT_BRANCH`.                                                                                    |
+| `PR_BRANCHES`                              | Comma-separated pull request base branch patterns. Defaults to `~DEFAULT_BRANCH`.                                                                       |
+| `ALLOWED_PRINCIPALS`                       | Comma-separated list of allowed principals (users/orgs). Defaults to `*` (all principals allowed). If explicitly empty, all installations are rejected. |
 
 ## ⚠️ Limitations
 

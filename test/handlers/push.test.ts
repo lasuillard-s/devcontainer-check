@@ -19,6 +19,22 @@ beforeEach(() => {
 	vi.stubEnv('PUSH_BRANCHES', 'setup-devenv');
 });
 
+describe('when principal is unauthorized on push', () => {
+	beforeEach(() => {
+		vi.stubEnv('ALLOWED_PRINCIPALS', 'authorized-org-only');
+	});
+
+	it('skips processing without making any API calls', async ({ probot }) => {
+		const mock = nock('https://api.github.com');
+
+		// @ts-expect-error Ignore fixture modification
+		await probot.receive({ id: '', name: 'push', payload });
+
+		expect(mock.isDone()).toBe(true);
+		expect(mock.pendingMocks()).toStrictEqual([]);
+	});
+});
+
 it('dispatches a workflow when devcontainer files are changed', async ({ probot }) => {
 	// Arrange
 	const workflowRunUrl = 'https://github.com/acme/devcontainer-check-runner/actions/runs/123';
