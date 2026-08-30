@@ -18,19 +18,19 @@ export default ((app) => {
 	app.on(
 		['installation.created', 'installation.unsuspend'],
 		async (context: Context<'installation.created' | 'installation.unsuspend'>) => {
-			await new InstallationHandler(context, appConfig, app).handle();
+			await new InstallationHandler(context, appConfig, app).execute();
 		}
 	);
 	app.on('push', async (context: Context<'push'>) => {
-		await new PushHandler(context, appConfig).handle();
+		await new PushHandler(context, appConfig).execute();
 	});
 	app.on(
 		['pull_request.opened', 'pull_request.synchronize'],
 		async (context: Context<'pull_request'>) => {
-			await new PullRequestHandler(context, appConfig).handle();
+			await new PullRequestHandler(context, appConfig).execute();
 		}
 	);
 	app.on('workflow_run.completed', async (context: Context<'workflow_run.completed'>) => {
-		await new WorkflowRunCompletedHandler(context, appConfig).handle();
+		await new WorkflowRunCompletedHandler(context, appConfig).execute();
 	});
 }) satisfies ApplicationFunction;

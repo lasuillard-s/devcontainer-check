@@ -24,6 +24,17 @@ export default class InstallationHandler extends BaseHandler<
 		this.app = app;
 	}
 
+	/**
+	 * Overrides BaseHandler.execute().
+	 *
+	 * Unlike other event handlers that skip processing for unauthorized principals,
+	 * InstallationHandler must execute even when the principal is unauthorized so that
+	 * it can automatically uninstall/delete the unauthorized installation.
+	 */
+	override async execute(): Promise<void> {
+		await this.handle();
+	}
+
 	async handle(): Promise<void> {
 		const allowedPrincipals = this.appConfig.ALLOWED_PRINCIPALS;
 
@@ -48,7 +59,7 @@ export default class InstallationHandler extends BaseHandler<
 			return;
 		}
 
-		if (!allowedPrincipals.includes(principal)) {
+		if (!this.isAuthorized()) {
 			this.log.warn(
 				`Installation ${installationId} ${action} by unauthorized principal: "${principal}". Uninstalling...`
 			);
@@ -79,22 +90,5 @@ export default class InstallationHandler extends BaseHandler<
 				`Failed to delete installation ${installationId} for unauthorized principal "${principal}": ${errorToString(error)}`
 			);
 		}
-	}
-
-	/**
-	 * Retrieves the principal (login) of the installation's account.
-	 * @returns The principal login or null if not available.
-	 */
-	private getPrincipal(): string | null {
-		const account = this.context.payload.installation.account;
-
-		// NOTE: The `login` property is expected to be present on the account object,
-		//       but typescript does not recognize it as such
-		if (!account || !('login' in account)) {
-			return null;
-		}
-
-		const principal = (account.login as string).toLowerCase();
-		return principal || null;
 	}
 }

@@ -13,6 +13,22 @@ beforeEach(() => {
 	vi.stubEnv('PR_BRANCHES', 'main');
 });
 
+describe('when principal is unauthorized on pull_request', () => {
+	beforeEach(() => {
+		vi.stubEnv('ALLOWED_PRINCIPALS', 'authorized-org-only');
+	});
+
+	it('skips processing without making any API calls', async ({ probot }) => {
+		const mock = nock('https://api.github.com');
+
+		// @ts-expect-error Ignore fixture modification
+		await probot.receive({ id: '', name: 'pull_request', payload: openedPayload });
+
+		expect(mock.isDone()).toBe(true);
+		expect(mock.pendingMocks()).toStrictEqual([]);
+	});
+});
+
 describe('pull_request.opened event', () => {
 	const installationId = openedPayload.installation.id;
 	const owner = openedPayload.repository.owner.login;
