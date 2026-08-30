@@ -2,6 +2,7 @@ import pino from 'pino';
 import { createNodeMiddleware, createProbot } from 'probot';
 import app from '../../../src/app.js';
 
+// Workaround for logs are not being printed in Vercel serverless functions
 const log = pino(
 	{
 		level: process.env.LOG_LEVEL || 'info'
