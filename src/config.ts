@@ -38,7 +38,12 @@ export const AppConfig = z.object({
 	PR_BRANCHES: z
 		.string()
 		.transform(parseCsv)
-		.default(() => [DEFAULT_BRANCH_ALIAS])
+		.default(() => [DEFAULT_BRANCH_ALIAS]),
+	/** Comma-separated list of allowed principals (users or organizations) that can install the GitHub App. Defaults to '*' (all installations allowed). */
+	ALLOWED_PRINCIPALS: z
+		.string()
+		.default('*')
+		.transform((val) => parseCsv(val).map((principal) => principal.toLowerCase()))
 });
 export type AppConfig = z.infer<typeof AppConfig>;
 

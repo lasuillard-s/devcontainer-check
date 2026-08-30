@@ -15,6 +15,22 @@ beforeEach(() => {
 	vi.stubEnv('CHECK_WORKFLOW_REF', undefined);
 });
 
+describe('when principal is unauthorized on workflow_run.completed', () => {
+	beforeEach(() => {
+		vi.stubEnv('ALLOWED_PRINCIPALS', 'authorized-org-only');
+	});
+
+	it('skips processing without making any API calls', async ({ probot }) => {
+		const mock = nock('https://api.github.com');
+
+		// @ts-expect-error Ignore fixture modification
+		await probot.receive({ id: '', name: 'workflow_run.completed', payload });
+
+		expect(mock.isDone()).toBe(true);
+		expect(mock.pendingMocks()).toStrictEqual([]);
+	});
+});
+
 it('ignores workflow run from non-runner repository', async ({ probot }) => {
 	// Arrange
 	const payloadWithDifferentRepo = structuredClone(payload);

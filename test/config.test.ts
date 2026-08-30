@@ -13,7 +13,8 @@ describe('AppConfig.parse', () => {
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'workflow-inputs',
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: 'inputs.json',
 			PUSH_BRANCHES: [DEFAULT_BRANCH_ALIAS],
-			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS]
+			PR_BRANCHES: [DEFAULT_BRANCH_ALIAS],
+			ALLOWED_PRINCIPALS: ['*']
 		});
 	});
 
@@ -27,7 +28,8 @@ describe('AppConfig.parse', () => {
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'my-workflow-inputs',
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: 'my-inputs.json',
 			PUSH_BRANCHES: 'main,develop',
-			PR_BRANCHES: 'feature/*'
+			PR_BRANCHES: 'feature/*',
+			ALLOWED_PRINCIPALS: ' Alice, Bob , org-1 '
 		});
 		expect(config).toMatchObject({
 			RUNNER_REPOSITORY: { owner: 'acme', repo: 'devcontainer-check-runner' },
@@ -38,7 +40,8 @@ describe('AppConfig.parse', () => {
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: 'my-workflow-inputs',
 			CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: 'my-inputs.json',
 			PUSH_BRANCHES: ['main', 'develop'],
-			PR_BRANCHES: ['feature/*']
+			PR_BRANCHES: ['feature/*'],
+			ALLOWED_PRINCIPALS: ['alice', 'bob', 'org-1']
 		});
 	});
 
@@ -68,13 +71,15 @@ describe('AppConfig.parse', () => {
 		).toThrow();
 	});
 
-	it('defaults PUSH_BRANCHES and PR_BRANCHES to empty array when set to empty string', () => {
+	it('defaults PUSH_BRANCHES, PR_BRANCHES, and ALLOWED_PRINCIPALS to empty array when set to empty string', () => {
 		const config = AppConfig.parse({
 			RUNNER_REPOSITORY: 'acme/runner',
 			PUSH_BRANCHES: '',
-			PR_BRANCHES: ''
+			PR_BRANCHES: '',
+			ALLOWED_PRINCIPALS: ''
 		});
 		expect(config.PUSH_BRANCHES).toStrictEqual([]);
 		expect(config.PR_BRANCHES).toStrictEqual([]);
+		expect(config.ALLOWED_PRINCIPALS).toStrictEqual([]);
 	});
 });

@@ -28,7 +28,7 @@
             nodejs_24
             ngrok
             devcontainer
-            opentofu
+            terraform
           ];
           shellHook = ''
             pre-commit install

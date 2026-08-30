@@ -1,6 +1,6 @@
 # ❤️‍🔥 Contributing to this project
 
-Thank you for your interest in contributing to **devcontainer-check**.
+Thank you for your interest in contributing to **Devcontainer Check**.
 
 ## 🐛 Reporting issues
 
@@ -39,7 +39,7 @@ Development environment comes with following tools installed:
 - Node.js 24.x
 - `ngrok` for webhook testing
 - `devcontainer` CLI for dev container testing
-- `opentofu` for deployment
+- `terraform` for deployment
 
 If you prefer a Dev Container, an example configuration is available in [.devcontainer.example/devcontainer.json](.devcontainer.example/devcontainer.json). Copy it to `.devcontainer/devcontainer.json` to use it locally.
 

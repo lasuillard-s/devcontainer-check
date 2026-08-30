@@ -8,17 +8,24 @@ import { Repo } from '../../src/lib/github.js';
  * Minimal concrete subclass used to exercise the shared helpers on BaseHandler.
  */
 class TestHandler extends BaseHandler<Context> {
-	constructor(config: AppConfig) {
+	public handleCalled = false;
+
+	constructor(config: AppConfig, payload: unknown = {}) {
 		const context = {
 			log: {
 				debug: vi.fn(),
-				warn: vi.fn()
-			}
+				info: vi.fn(),
+				warn: vi.fn(),
+				error: vi.fn()
+			},
+			payload
 		} as unknown as Context;
 		super(context, config);
 	}
 
-	async handle(): Promise<void> {}
+	async handle(): Promise<void> {
+		this.handleCalled = true;
+	}
 }
 
 describe('BaseHandler.getRunnerFor', () => {
@@ -122,5 +129,110 @@ describe('BaseHandler.isRunnerRepo', () => {
 		});
 		const handler = new TestHandler(config);
 		expect(handler.isRunnerRepo(new Repo('acme', 'runner'))).toBe(true);
+	});
+});
+
+describe('BaseHandler.getPrincipal', () => {
+	const baseConfig = AppConfig.parse({
+		RUNNER_REPOSITORY: 'acme/runner'
+	});
+
+	it('returns null when payload has no recognizable account login', () => {
+		const handler = new TestHandler(baseConfig, {});
+		expect(handler.getPrincipal()).toBeNull();
+	});
+
+	it('returns null when account login is not a string or missing', () => {
+		const handler = new TestHandler(baseConfig, { installation: { account: {} } });
+		expect(handler.getPrincipal()).toBeNull();
+	});
+
+	it('returns lowercase login of the installation account', () => {
+		const handler = new TestHandler(baseConfig, {
+			installation: { account: { login: 'My-Org-User' } }
+		});
+		expect(handler.getPrincipal()).toBe('my-org-user');
+	});
+
+	it('returns lowercase login of the repository owner when installation account is not set', () => {
+		const handler = new TestHandler(baseConfig, {
+			repository: { owner: { login: 'Repo-Owner-User' } }
+		});
+		expect(handler.getPrincipal()).toBe('repo-owner-user');
+	});
+
+	it('returns lowercase login of the organization when installation account and repo owner are not set', () => {
+		const handler = new TestHandler(baseConfig, {
+			organization: { login: 'My-Org' }
+		});
+		expect(handler.getPrincipal()).toBe('my-org');
+	});
+});
+
+describe('BaseHandler.isAuthorized', () => {
+	it('returns true when ALLOWED_PRINCIPALS is "*"', () => {
+		const config = AppConfig.parse({
+			RUNNER_REPOSITORY: 'acme/runner',
+			ALLOWED_PRINCIPALS: '*'
+		});
+		const handler = new TestHandler(config, {});
+		expect(handler.isAuthorized()).toBe(true);
+	});
+
+	it('returns false when ALLOWED_PRINCIPALS is configured but principal cannot be determined', () => {
+		const config = AppConfig.parse({
+			RUNNER_REPOSITORY: 'acme/runner',
+			ALLOWED_PRINCIPALS: 'org1,org2'
+		});
+		const handler = new TestHandler(config, {});
+		expect(handler.isAuthorized()).toBe(false);
+	});
+
+	it('returns true when principal is in ALLOWED_PRINCIPALS (case-insensitively)', () => {
+		const config = AppConfig.parse({
+			RUNNER_REPOSITORY: 'acme/runner',
+			ALLOWED_PRINCIPALS: 'ORG1,org2'
+		});
+		const handler = new TestHandler(config, {
+			installation: { account: { login: 'org1' } }
+		});
+		expect(handler.isAuthorized()).toBe(true);
+	});
+
+	it('returns false when principal is not in ALLOWED_PRINCIPALS', () => {
+		const config = AppConfig.parse({
+			RUNNER_REPOSITORY: 'acme/runner',
+			ALLOWED_PRINCIPALS: 'org1,org2'
+		});
+		const handler = new TestHandler(config, {
+			installation: { account: { login: 'other-org' } }
+		});
+		expect(handler.isAuthorized()).toBe(false);
+	});
+});
+
+describe('BaseHandler.execute', () => {
+	it('calls handle when authorized', async () => {
+		const config = AppConfig.parse({
+			RUNNER_REPOSITORY: 'acme/runner',
+			ALLOWED_PRINCIPALS: 'org1'
+		});
+		const handler = new TestHandler(config, {
+			installation: { account: { login: 'org1' } }
+		});
+		await handler.execute();
+		expect(handler.handleCalled).toBe(true);
+	});
+
+	it('skips handle when unauthorized', async () => {
+		const config = AppConfig.parse({
+			RUNNER_REPOSITORY: 'acme/runner',
+			ALLOWED_PRINCIPALS: 'org1'
+		});
+		const handler = new TestHandler(config, {
+			installation: { account: { login: 'unauthorized-org' } }
+		});
+		await handler.execute();
+		expect(handler.handleCalled).toBe(false);
 	});
 });
