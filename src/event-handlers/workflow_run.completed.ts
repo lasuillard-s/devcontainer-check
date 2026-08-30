@@ -2,6 +2,7 @@ import path from 'node:path';
 import { Context } from 'probot';
 import { CHECK_RUN_NAME } from '../constants.js';
 import { fetchInputs, Repo } from '../lib/github.js';
+import { errorToString } from '../utils/error.js';
 import { BaseHandler } from './base.js';
 
 /**
@@ -36,12 +37,20 @@ export default class WorkflowRunCompletedHandler extends BaseHandler<
 		}
 
 		// Find artifact that contains the workflow inputs to determine which repository and ref this workflow run is associated with
-		const inputs = await fetchInputs(this.octokit, {
-			repo,
-			workflowRunId: payload.workflow_run.id,
-			artifactName: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME,
-			artifactPath: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH
-		});
+		let inputs;
+		try {
+			inputs = await fetchInputs(this.octokit, {
+				repo,
+				workflowRunId: payload.workflow_run.id,
+				artifactName: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME,
+				artifactPath: this.appConfig.CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH
+			});
+		} catch (error) {
+			this.log.error(
+				`Failed to fetch workflow inputs for workflow run ${payload.workflow_run.id}: ${errorToString(error)}`
+			);
+			return;
+		}
 		if (!inputs) {
 			return;
 		}

@@ -204,7 +204,7 @@ describe('when runner repository matches', () => {
 		expect(mock.isDone()).toBe(true);
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
-	it('throws error when artifact file download fails', async ({ probot }) => {
+	it('skips status update when artifact file download fails', async ({ probot }) => {
 		// Arrange
 		const mock = nock('https://api.github.com')
 			.post(`/app/installations/${installationId}/access_tokens`)
@@ -214,9 +214,11 @@ describe('when runner repository matches', () => {
 			.get(`/repos/${owner}/${repo}/actions/artifacts/42/zip`)
 			.reply(500);
 
-		// Act & Assert
+		// Act
 		// @ts-expect-error Ignore fixture modification
-		await expect(probot.receive({ id: '', name: 'workflow_run', payload })).rejects.toThrow();
+		await probot.receive({ id: '', name: 'workflow_run', payload });
+
+		// Assert
 		expect(mock.isDone()).toBe(true);
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
@@ -243,7 +245,7 @@ describe('when runner repository matches', () => {
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
 
-	it('throws error when artifact file contains invalid JSON', async ({ probot }) => {
+	it('skips status update when artifact file contains invalid JSON', async ({ probot }) => {
 		// Arrange
 		const zip = new AdmZip();
 		zip.addFile('inputs.json', Buffer.from('invalid-json'));
@@ -256,11 +258,11 @@ describe('when runner repository matches', () => {
 			.get(`/repos/${owner}/${repo}/actions/artifacts/42/zip`)
 			.reply(200, zipBuffer, { 'Content-Type': 'application/zip' });
 
-		// Act & Assert
+		// Act
 		// @ts-expect-error Ignore fixture modification
-		await expect(probot.receive({ id: '', name: 'workflow_run', payload })).rejects.toThrow(
-			'Failed to parse workflow inputs from artifact file'
-		);
+		await probot.receive({ id: '', name: 'workflow_run', payload });
+
+		// Assert
 		expect(mock.isDone()).toBe(true);
 		expect(mock.pendingMocks()).toStrictEqual([]);
 	});
