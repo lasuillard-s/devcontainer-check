@@ -1,6 +1,6 @@
 import { Context, Probot } from 'probot';
 import { AppConfig } from '../config.js';
-import { errorToString } from '../utils.js';
+import { errorToString } from '../utils/error.js';
 import { BaseHandler } from './base.js';
 
 /**

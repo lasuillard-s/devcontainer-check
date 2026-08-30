@@ -77,7 +77,7 @@ jobs:
         shell: bash
     steps:
       # Save the workflow inputs as an artifact for use on workflow completion event
-      # (see src/handlers/workflow_run.completed.ts)
+      # (see src/event-handlers/workflow_run.completed.ts)
       - name: Save workflow inputs
         run: echo '${{ toJSON(inputs) }}' > inputs.json
 

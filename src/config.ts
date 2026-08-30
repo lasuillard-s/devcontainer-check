@@ -1,7 +1,5 @@
-import type { Probot } from 'probot';
 import * as z from 'zod';
-import { Repo } from './octokit.js';
-import { errorToString } from './utils.js';
+import { Repo } from './lib/github.js';
 
 export const DEFAULT_BRANCH_ALIAS = '~DEFAULT_BRANCH';
 
@@ -48,20 +46,6 @@ export const AppConfig = z.object({
 		.transform((val) => parseCsv(val).map((principal) => principal.toLowerCase()))
 });
 export type AppConfig = z.infer<typeof AppConfig>;
-
-/**
- * Load app configuration from environment variables.
- * @param app Current Probot app instance
- * @returns Validated application configuration
- */
-export function loadConfig(app: Probot): AppConfig {
-	try {
-		return AppConfig.parse(process.env);
-	} catch (error) {
-		app.log.error(`Failed to load configuration: ${errorToString(error)}`);
-		process.exit(1);
-	}
-}
 
 /**
  * Validate that a string is in the format "owner/repo".

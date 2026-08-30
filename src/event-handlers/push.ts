@@ -1,11 +1,12 @@
 import type { ProbotOctokit } from 'probot';
 import { Context } from 'probot';
 import { DEFAULT_BRANCH_ALIAS } from '../config.js';
-import { isDevContainerFileChanged } from '../devcontainer.js';
-import { branchNameFromRef } from '../git.js';
-import { Repo } from '../octokit.js';
-import { matchPatterns } from '../utils.js';
-import { BaseHandler, CHECK_RUN_NAME } from './base.js';
+import { CHECK_RUN_NAME } from '../constants.js';
+import { isDevContainerFileChanged } from '../lib/devcontainer.js';
+import { branchNameFromRef } from '../utils/git.js';
+import { dispatchCheckWorkflow, Repo } from '../lib/github.js';
+import { matchPatterns } from '../utils/string.js';
+import { BaseHandler } from './base.js';
 
 /** Special GitHub ref value indicating a non-existent commit (e.g., for new branch creations or deletions) */
 const GITHUB_NULL_SHA = '0000000000000000000000000000000000000000';
@@ -117,7 +118,13 @@ export default class PushHandler extends BaseHandler<Context<'push'>> {
 		}
 
 		// If devcontainer-related changes are detected, trigger the workflow dispatch event
-		await this.dispatchCheckWorkflow(repo, sha, runnerRepo);
+		await dispatchCheckWorkflow(this.context, {
+			repo,
+			sha,
+			runnerRepo,
+			workflowName: this.appConfig.CHECK_WORKFLOW_NAME,
+			workflowRef: this.appConfig.CHECK_WORKFLOW_REF
+		});
 	}
 
 	/**
