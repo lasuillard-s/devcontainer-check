@@ -49,6 +49,16 @@ describe('installation events access control', () => {
 			expect(mock.isDone()).toBe(true);
 			expect(mock.pendingMocks()).toStrictEqual([]);
 		});
+
+		it('allows unsuspend on installation.unsuspend', async ({ probot }) => {
+			const mock = nock('https://api.github.com');
+
+			// @ts-expect-error Ignore fixture type mismatch
+			await probot.receive({ id: '', name: 'installation', payload: unsuspendPayload });
+
+			expect(mock.isDone()).toBe(true);
+			expect(mock.pendingMocks()).toStrictEqual([]);
+		});
 	});
 
 	describe('when ALLOWED_PRINCIPALS is explicitly empty', () => {
@@ -64,6 +74,18 @@ describe('installation events access control', () => {
 
 			// @ts-expect-error Ignore fixture type mismatch
 			await probot.receive({ id: '', name: 'installation', payload: createdPayload });
+
+			expect(mock.isDone()).toBe(true);
+			expect(mock.pendingMocks()).toStrictEqual([]);
+		});
+
+		it('uninstalls app on installation.unsuspend', async ({ probot }) => {
+			const mock = nock('https://api.github.com')
+				.delete(`/app/installations/${installationId}`)
+				.reply(204);
+
+			// @ts-expect-error Ignore fixture type mismatch
+			await probot.receive({ id: '', name: 'installation', payload: unsuspendPayload });
 
 			expect(mock.isDone()).toBe(true);
 			expect(mock.pendingMocks()).toStrictEqual([]);
