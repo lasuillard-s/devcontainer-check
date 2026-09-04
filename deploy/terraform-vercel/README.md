@@ -7,7 +7,7 @@ This guide explains how to deploy the app to Vercel using Terraform Cloud as the
 
 ## Create a workspace in Terraform Cloud
 
-At first, create a new workspace in Terraform Cloud with **Version Control Workflow**.
+First, create a new workspace in Terraform Cloud with **Version Control Workflow**.
 
 ![Create a new workspace in Terraform Cloud](docs/create-new-workspace.png)
 
@@ -33,7 +33,7 @@ You will be prompted to add variables to your workspace, as follows:
 
 ![Add recommended workspace variables](docs/add-recommended-workspace-variables.png)
 
-   For variables Terraform Cloud does not catch, you can add them manually on the **Variables** page later.
+For variables Terraform Cloud does not catch, you can add them manually on the **Variables** page later.
 
 ![Add workspace variables](docs/add-workspace-variables.png)
 
