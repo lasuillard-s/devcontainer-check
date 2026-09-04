@@ -5,43 +5,54 @@ This guide explains how to deploy the app to Vercel using Terraform Cloud as the
 > [!NOTE]
 > You can also use the Terraform CLI to deploy to Vercel, but you will need to manage the state file yourself.
 
-1. Create a new workspace in Terraform Cloud with **Version Control Workflow**.
+## Create a workspace in Terraform Cloud
 
-   ![Create a new workspace in Terraform Cloud](images/create-new-workspace.png)
-   ![Choose workflow type](images/choose-workflow-type.png)
+First, create a new workspace in Terraform Cloud with **Version Control Workflow**.
 
-1. If you have not connected your repository, install the Terraform GitHub App on your account or organization first:
+![Create a new workspace in Terraform Cloud](docs/create-new-workspace.png)
 
-   ![Connect to a version control provider](images/connect-vcs.png)
+![Choose workflow type](docs/choose-workflow-type.png)
 
-1. Then choose your repository (fork or clone).
+## Connect your repository
 
-   ![Choose a repository](images/choose-repo.png)
+If you have not connected your repository, install the Terraform GitHub App on your account or organization first:
 
-1. Click **Advanced options** below and set the **Terraform working directory** to `deploy/terraform-vercel`.
+![Connect to a version control provider](docs/connect-vcs.png)
 
-   ![Update advanced options](images/update-advanced-options.png)
+Then choose your repository (fork or clone).
 
-1. You will be prompted to add variables to your workspace, as follows:
+![Choose a repository](docs/choose-repo.png)
 
-   ![Add recommended workspace variables](images/add-recommended-workspace-variables.png)
+## Configure your workspace
 
-   For variables Terraform Cloud does not catch, you can add them manually on the **Variables** page.
+Click **Advanced options** below and set the **Terraform working directory** to `deploy/terraform-vercel`.
 
-   ![Add workspace variables](images/add-workspace-variables.png)
+![Update advanced options](docs/update-advanced-options.png)
 
-1. Click **New run** and start a plan to deploy the app to Vercel.
+You will be prompted to add variables to your workspace, as follows:
 
-   ![Start new speculative plan](images/start-new-run.png)
+![Add recommended workspace variables](docs/add-recommended-workspace-variables.png)
 
-1. Review the plan and click **Confirm & apply** to deploy the app to Vercel.
+For variables Terraform Cloud does not catch, you can add them manually on the **Variables** page later.
 
-   ![Review the plan](images/review-plan.png)
+![Add workspace variables](docs/add-workspace-variables.png)
 
-1. Check the outputs for the following steps to complete the setup of your GitHub App.
+## Deploy the app
 
-   ![Check the outputs](images/check-outputs.png)
+Click **New run** and start a plan to deploy the app to Vercel.
 
-1. Finish your GitHub App configuration using the outputs. For example, you need to update the webhook URL to receive events from GitHub.
+![Start new speculative plan](docs/start-new-run.png)
 
-   ![Update GitHub App webhook URL](images/update-webhook-url.png)
+Review the plan and click **Confirm & apply** to deploy the app to Vercel.
+
+![Review the plan](docs/review-plan.png)
+
+## Update your GitHub App configuration
+
+Check the outputs for the following steps to complete the setup of your GitHub App.
+
+![Check the outputs](docs/check-outputs.png)
+
+Finish your GitHub App configuration using the outputs. For example, you need to update the webhook URL to receive events from GitHub.
+
+![Update GitHub App webhook URL](docs/update-webhook-url.png)
