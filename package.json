@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"readme": "README.md",
-	"license": "MIT",
+	"license": "GPL-3.0-only",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lasuillard-s/devcontainer-check.git"
