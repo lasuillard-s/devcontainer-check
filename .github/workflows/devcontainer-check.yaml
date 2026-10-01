@@ -107,7 +107,7 @@ jobs:
 
       - name: Checkout
         id: checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ inputs.owner }}/${{ inputs.repo }}
           ref: ${{ inputs.sha }}
@@ -215,7 +215,7 @@ jobs:
       - name: Restore previous check result from cache
         id: cache
         if: steps.resolve-config.outputs.using-devcontainer == 'true'
-        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           key: check-result-${{ inputs.owner }}-${{ inputs.repo }}-${{
             steps.hash-config.outputs.config-hash }}
@@ -345,7 +345,7 @@ jobs:
           && steps.resolve-config.outputs.using-devcontainer == 'true'
           && steps.cached-result.outputs.reused != 'true'
           && steps.write-result.outcome == 'success'
-        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           key: check-result-${{ inputs.owner }}-${{ inputs.repo }}-${{
             steps.hash-config.outputs.config-hash }}
