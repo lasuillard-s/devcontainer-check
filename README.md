@@ -49,7 +49,7 @@ sequenceDiagram
 ## 👂 Deploying the webhook handler
 
 > [!NOTE]
-> GitHub App must be installed and configured properly before deploying the application. It will not covered in this guide.
+> The GitHub App must be installed and configured properly before deploying the application. This is not covered in this guide.
 
 This app is configured for Vercel through [`vercel.json`](./vercel.json). This project also offers an option to deploy the app to Vercel using Terraform. See the [`deploy/terraform-vercel`](./deploy/terraform-vercel) directory for deployment instructions.
 
