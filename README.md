@@ -11,7 +11,10 @@ A GitHub App that automates validation of your repository's Dev Container.
 
 ## ✨ Features
 
-Devcontainer Check is a TypeScript-based Probot app with these features:
+> [!IMPORTANT]
+> This project is provided as-is. We do not offer any GitHub App for installation. To use it, you will need to deploy it by yourself.
+
+Devcontainer Check is a TypeScript-based [Probot](https://probot.github.io/) app with these features:
 
 - **Detect Dev Container changes** in `.devcontainer/` and `.devcontainer.example/`
 - **Offload validation workflows** to a separate runner repository when Dev Container files change
@@ -43,19 +46,10 @@ sequenceDiagram
 - When no Dev Container files change, the app marks the commit as successful without dispatching a workflow.
 - Runner selection can vary by repository visibility through `RUNNER_REPOSITORY_FOR_PRIVATE` and `RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE`.
 
-## ⌨️ Registering the GitHub App
-
-To register the GitHub App, clone the repository and run the following commands in a terminal:
-
-```bash
-npm install
-npm run build
-npm run dev
-```
-
-Then open `http://localhost:3000` to register and run the app with Probot's local helper.
-
 ## 👂 Deploying the webhook handler
+
+> [!NOTE]
+> GitHub App must be installed and configured properly before deploying the application. It will not covered in this guide.
 
 This app is configured for Vercel through [`vercel.json`](./vercel.json). This project also offers an option to deploy the app to Vercel using Terraform. See the [`deploy/terraform-vercel`](./deploy/terraform-vercel) directory for deployment instructions.
 
