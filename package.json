@@ -1,74 +1,74 @@
 {
-	"name": "devcontainer-check",
-	"version": "0.1.0",
-	"private": true,
-	"readme": "README.md",
-	"license": "GPL-3.0-only",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lasuillard-s/devcontainer-check.git"
-	},
-	"author": {
-		"name": "Yuchan Lee",
-		"url": "https://github.com/lasuillard",
-		"email": "lasuillard@gmail.com"
-	},
-	"homepage": "https://github.com/lasuillard-s/devcontainer-check",
-	"bugs": {
-		"url": "https://github.com/lasuillard-s/devcontainer-check/issues"
-	},
-	"scripts": {
-		"dev": "probot run ./dist/src/app.js",
-		"dev:watch": "nodemon --watch ./src --ext js,ts --exec 'npm run build; npm run dev'",
-		"build": "tsc",
-		"build:watch": "tsc --watch",
-		"fmt": "prettier --write --list-different .",
-		"fmt:check": "prettier --check .",
-		"lint": "eslint .",
-		"lint:fix": "eslint --fix .",
-		"typecheck": "tsc --noEmit",
-		"test": "vitest --run",
-		"test:watch": "vitest --watch"
-	},
-	"type": "module",
-	"dependencies": {
-		"adm-zip": "0.6.1",
-		"minimatch": "10.2.6",
-		"probot": "14.3.2",
-		"zod": "4.6.5"
-	},
-	"devEngines": {
-		"runtime": {
-			"name": "node",
-			"version": ">=24",
-			"onFail": "error"
-		},
-		"packageManager": {
-			"name": "npm",
-			"version": ">=11",
-			"onFail": "error"
-		}
-	},
-	"devDependencies": {
-		"@eslint/eslintrc": "3.3.7",
-		"@eslint/js": "10.0.1",
-		"@types/adm-zip": "0.5.8",
-		"@types/node": "24.19.1",
-		"@vitest/coverage-v8": "5.0.3",
-		"@vitest/ui": "5.0.3",
-		"eslint-config-prettier": "10.1.8",
-		"eslint-plugin-jsdoc": "65.1.0",
-		"globals": "17.13.0",
-		"ioredis": "6.0.0",
-		"nock": "14.0.17",
-		"nodemon": "3.1.14",
-		"prettier": "3.9.9",
-		"smee-client": "5.0.0",
-		"typescript-eslint": "8.71.0",
-		"typescript": "6.0.3",
-		"vitest": "5.0.3"
-	},
-	"overrides": {
-		"@types/pg": "8.23.1"
-	}
+  "name": "devcontainer-check",
+  "version": "0.1.0",
+  "private": true,
+  "readme": "README.md",
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lasuillard-s/devcontainer-check.git"
+  },
+  "author": {
+    "name": "Yuchan Lee",
+    "url": "https://github.com/lasuillard",
+    "email": "lasuillard@gmail.com"
+  },
+  "homepage": "https://github.com/lasuillard-s/devcontainer-check",
+  "bugs": {
+    "url": "https://github.com/lasuillard-s/devcontainer-check/issues"
+  },
+  "scripts": {
+    "dev": "probot run ./dist/src/app.js",
+    "dev:watch": "nodemon --watch ./src --ext js,ts --exec 'npm run build; npm run dev'",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "fmt": "prettier --write --list-different .",
+    "fmt:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch"
+  },
+  "type": "module",
+  "dependencies": {
+    "adm-zip": "0.6.1",
+    "minimatch": "10.2.6",
+    "probot": "14.3.2",
+    "zod": "4.6.5"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11",
+      "onFail": "error"
+    }
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "3.3.7",
+    "@eslint/js": "10.0.1",
+    "@types/adm-zip": "0.5.8",
+    "@types/node": "24.19.1",
+    "@vitest/coverage-v8": "5.0.3",
+    "@vitest/ui": "5.0.3",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-jsdoc": "65.1.0",
+    "globals": "17.13.0",
+    "ioredis": "6.0.0",
+    "nock": "14.0.17",
+    "nodemon": "3.1.14",
+    "prettier": "3.9.9",
+    "smee-client": "5.0.0",
+    "typescript-eslint": "8.71.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  },
+  "overrides": {
+    "@types/pg": "8.23.1"
+  }
 }

@@ -4,7 +4,7 @@
  * @returns True if the ref is a tag reference, false otherwise
  */
 export function isRefTag(ref: string): boolean {
-	return ref.startsWith('refs/tags/');
+  return ref.startsWith("refs/tags/");
 }
 
 /**
@@ -13,9 +13,9 @@ export function isRefTag(ref: string): boolean {
  * @returns The extracted branch name (e.g., 'main') otherwise null if the ref does not start with 'refs/heads/'
  */
 export function branchNameFromRef(ref: string): string | null {
-	if (ref.startsWith('refs/heads/')) {
-		const branchName = ref.replace('refs/heads/', '');
-		return branchName ? branchName : null;
-	}
-	return null;
+  if (ref.startsWith("refs/heads/")) {
+    const branchName = ref.replace("refs/heads/", "");
+    return branchName ? branchName : null;
+  }
+  return null;
 }
