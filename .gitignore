@@ -1,6 +1,7 @@
 .devcontainer
 .vercel
 .vscode
+.vitest
 coverage
 node_modules
 *.pem

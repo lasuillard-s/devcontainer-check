@@ -1,49 +1,61 @@
-import * as z from 'zod';
-import { Repo } from './lib/github.js';
+import * as z from "zod";
+import { Repo } from "./lib/github.js";
 
-export const DEFAULT_BRANCH_ALIAS = '~DEFAULT_BRANCH';
+export const DEFAULT_BRANCH_ALIAS = "~DEFAULT_BRANCH";
 
 export const AppConfig = z.object({
-	/** Full name (owner/repo) of the runner repository used for public target repositories. */
-	RUNNER_REPOSITORY: z
-		.string()
-		.refine(validateRepositoryFormat, {
-			message: 'RUNNER_REPOSITORY must be in the format "owner/repo"'
-		})
-		.transform(Repo.fromFullName),
-	/** Full name (owner/repo) of the runner repository used for private target repositories. If unset, checks for private repositories are skipped. */
-	RUNNER_REPOSITORY_FOR_PRIVATE: z
-		.string()
-		.refine(validateRepositoryFormat, {
-			message: 'RUNNER_REPOSITORY_FOR_PRIVATE must be in the format "owner/repo"'
-		})
-		.transform(Repo.fromFullName)
-		.optional(),
-	/** Set to true to allow dispatching private target repositories to the public runner when no private runner repository is configured. Off by default. */
-	RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE: z.string().optional().transform(toBoolean),
-	/** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
-	CHECK_WORKFLOW_NAME: z.string().nonempty().default('devcontainer-check.yaml'),
-	/** Reference for the workflow dispatch event. Defaults to the default branch of the runner repository. */
-	CHECK_WORKFLOW_REF: z.string().nonempty().default(DEFAULT_BRANCH_ALIAS),
-	/** Name of the artifact containing the workflow inputs. Defaults to 'workflow-inputs'. */
-	CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: z.string().nonempty().default('workflow-inputs'),
-	/** Path to the inputs file within the artifact. Defaults to 'inputs.json'. */
-	CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: z.string().nonempty().default('inputs.json'),
-	/** Comma-separated list of branch names (supports glob patterns) that check runs on. Defaults to the repository default branch. */
-	PUSH_BRANCHES: z
-		.string()
-		.transform(parseCsv)
-		.default(() => [DEFAULT_BRANCH_ALIAS]),
-	/** Comma-separated list of target branch names (supports glob patterns) that check runs on for pull requests. Defaults to the repository default branch. */
-	PR_BRANCHES: z
-		.string()
-		.transform(parseCsv)
-		.default(() => [DEFAULT_BRANCH_ALIAS]),
-	/** Comma-separated list of allowed principals (users or organizations) that can install the GitHub App. Defaults to '*' (all installations allowed). */
-	ALLOWED_PRINCIPALS: z
-		.string()
-		.default('*')
-		.transform((val) => parseCsv(val).map((principal) => principal.toLowerCase()))
+  /** Full name (owner/repo) of the runner repository used for public target repositories. */
+  RUNNER_REPOSITORY: z
+    .string()
+    .refine(validateRepositoryFormat, {
+      message: 'RUNNER_REPOSITORY must be in the format "owner/repo"',
+    })
+    .transform(Repo.fromFullName),
+  /** Full name (owner/repo) of the runner repository used for private target repositories. If unset, checks for private repositories are skipped. */
+  RUNNER_REPOSITORY_FOR_PRIVATE: z
+    .string()
+    .refine(validateRepositoryFormat, {
+      message:
+        'RUNNER_REPOSITORY_FOR_PRIVATE must be in the format "owner/repo"',
+    })
+    .transform(Repo.fromFullName)
+    .optional(),
+  /** Set to true to allow dispatching private target repositories to the public runner when no private runner repository is configured. Off by default. */
+  RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE: z
+    .string()
+    .optional()
+    .transform(toBoolean),
+  /** ID of the workflow to be triggered. Defaults to 'devcontainer-check.yaml'. */
+  CHECK_WORKFLOW_NAME: z.string().nonempty().default("devcontainer-check.yaml"),
+  /** Reference for the workflow dispatch event. Defaults to the default branch of the runner repository. */
+  CHECK_WORKFLOW_REF: z.string().nonempty().default(DEFAULT_BRANCH_ALIAS),
+  /** Name of the artifact containing the workflow inputs. Defaults to 'workflow-inputs'. */
+  CHECK_WORKFLOW_INPUTS_ARTIFACT_NAME: z
+    .string()
+    .nonempty()
+    .default("workflow-inputs"),
+  /** Path to the inputs file within the artifact. Defaults to 'inputs.json'. */
+  CHECK_WORKFLOW_INPUTS_ARTIFACT_PATH: z
+    .string()
+    .nonempty()
+    .default("inputs.json"),
+  /** Comma-separated list of branch names (supports glob patterns) that check runs on. Defaults to the repository default branch. */
+  PUSH_BRANCHES: z
+    .string()
+    .transform(parseCsv)
+    .default(() => [DEFAULT_BRANCH_ALIAS]),
+  /** Comma-separated list of target branch names (supports glob patterns) that check runs on for pull requests. Defaults to the repository default branch. */
+  PR_BRANCHES: z
+    .string()
+    .transform(parseCsv)
+    .default(() => [DEFAULT_BRANCH_ALIAS]),
+  /** Comma-separated list of allowed principals (users or organizations) that can install the GitHub App. Defaults to '*' (all installations allowed). */
+  ALLOWED_PRINCIPALS: z
+    .string()
+    .default("*")
+    .transform((val) =>
+      parseCsv(val).map((principal) => principal.toLowerCase()),
+    ),
 });
 export type AppConfig = z.infer<typeof AppConfig>;
 
@@ -53,8 +65,8 @@ export type AppConfig = z.infer<typeof AppConfig>;
  * @returns True if the string is in the correct format, false otherwise
  */
 function validateRepositoryFormat(value: string): boolean {
-	const [owner, repo, ...rest] = value.split('/');
-	return Boolean(owner && repo && rest.length === 0);
+  const [owner, repo, ...rest] = value.split("/");
+  return Boolean(owner && repo && rest.length === 0);
 }
 
 /**
@@ -63,8 +75,8 @@ function validateRepositoryFormat(value: string): boolean {
  * @returns True if the string is a truthy value, false otherwise
  */
 function toBoolean(value: string | undefined): boolean | undefined {
-	if (value === undefined) return undefined;
-	return value.trim().toLowerCase() === 'true';
+  if (value === undefined) return undefined;
+  return value.trim().toLowerCase() === "true";
 }
 
 /**
@@ -73,11 +85,11 @@ function toBoolean(value: string | undefined): boolean | undefined {
  * @returns Array of string
  */
 function parseCsv(value: string): string[] {
-	const normalizedValue = value.trim();
-	return normalizedValue
-		? normalizedValue
-				.split(',')
-				.map((item) => item.trim())
-				.filter(Boolean)
-		: [];
+  const normalizedValue = value.trim();
+  return normalizedValue
+    ? normalizedValue
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
 }

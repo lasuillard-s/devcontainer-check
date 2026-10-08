@@ -4,11 +4,14 @@
  * @returns True if any devcontainer-related file is changed, false otherwise
  */
 export function isDevContainerFileChanged(changedFiles: string[]): boolean {
-	let changed = false;
-	for (const file of changedFiles) {
-		if (file.startsWith('.devcontainer/') || file.startsWith('.devcontainer.example/')) {
-			changed = true;
-		}
-	}
-	return changed;
+  let changed = false;
+  for (const file of changedFiles) {
+    if (
+      file.startsWith(".devcontainer/") ||
+      file.startsWith(".devcontainer.example/")
+    ) {
+      changed = true;
+    }
+  }
+  return changed;
 }

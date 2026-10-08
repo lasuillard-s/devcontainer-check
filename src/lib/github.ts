@@ -1,75 +1,79 @@
-import AdmZip from 'adm-zip';
-import type { Context, ProbotOctokit } from 'probot';
-import { DEFAULT_BRANCH_ALIAS } from '../config.js';
-import { CHECK_RUN_NAME } from '../constants.js';
-import { errorToString } from '../utils/error.js';
+import AdmZip from "adm-zip";
+import type { Context, ProbotOctokit } from "probot";
+import { DEFAULT_BRANCH_ALIAS } from "../config.js";
+import { CHECK_RUN_NAME } from "../constants.js";
+import { errorToString } from "../utils/error.js";
 
 /** Minimal shape of a Probot event context needed to derive the current repository. */
 interface ContextRepoProvider {
-	repo: () => { owner: string; repo: string };
+  repo: () => { owner: string; repo: string };
 }
 
 export class Repo {
-	constructor(
-		public readonly owner: string,
-		public readonly repo: string
-	) {}
+  constructor(
+    public readonly owner: string,
+    public readonly repo: string,
+  ) {}
 
-	/**
-	 * Parses a repository full name in `owner/repo` format into a Repo.
-	 * @param fullName Repository full name
-	 * @returns The parsed Repo
-	 */
-	static fromFullName(fullName: string): Repo {
-		const [owner, repo] = fullName.split('/');
-		return new Repo(owner, repo);
-	}
+  /**
+   * Parses a repository full name in `owner/repo` format into a Repo.
+   * @param fullName Repository full name
+   * @returns The parsed Repo
+   */
+  static fromFullName(fullName: string): Repo {
+    const [owner, repo] = fullName.split("/");
+    return new Repo(owner, repo);
+  }
 
-	/**
-	 * Creates a Repo from a Probot event context.
-	 * @param context Event context that exposes the repository helper
-	 * @returns The Repo for the event's repository
-	 */
-	static fromContext(context: ContextRepoProvider): Repo {
-		const { owner, repo } = context.repo();
-		return new Repo(owner, repo);
-	}
+  /**
+   * Creates a Repo from a Probot event context.
+   * @param context Event context that exposes the repository helper
+   * @returns The Repo for the event's repository
+   */
+  static fromContext(context: ContextRepoProvider): Repo {
+    const { owner, repo } = context.repo();
+    return new Repo(owner, repo);
+  }
 
-	/**
-	 * Returns the `owner/repo` full name of the repository.
-	 * @returns The full name in `owner/repo` format
-	 */
-	toFullName(): string {
-		return `${this.owner}/${this.repo}`;
-	}
+  /**
+   * Returns the `owner/repo` full name of the repository.
+   * @returns The full name in `owner/repo` format
+   */
+  toFullName(): string {
+    return `${this.owner}/${this.repo}`;
+  }
 
-	/**
-	 * Checks if this repository equals another by owner and repo.
-	 * @param other The repository to compare with
-	 * @returns True if both owner and repo match
-	 */
-	equals(other: Repo): boolean {
-		return this.owner === other.owner && this.repo === other.repo;
-	}
+  /**
+   * Checks if this repository equals another by owner and repo.
+   * @param other The repository to compare with
+   * @returns True if both owner and repo match
+   */
+  equals(other: Repo): boolean {
+    return this.owner === other.owner && this.repo === other.repo;
+  }
 }
 
 export interface CreateWorkflowDispatchResult {
-	html_url: string;
-	run_url: string;
-	workflow_run_id: number;
+  html_url: string;
+  run_url: string;
+  workflow_run_id: number;
 }
 
 export async function createWorkflowDispatch(
-	octokit: ProbotOctokit,
-	params: Parameters<ProbotOctokit['rest']['actions']['createWorkflowDispatch']>[0] & {
-		return_run_details: false;
-	}
+  octokit: ProbotOctokit,
+  params: Parameters<
+    ProbotOctokit["rest"]["actions"]["createWorkflowDispatch"]
+  >[0] & {
+    return_run_details: false;
+  },
 ): Promise<undefined>;
 export async function createWorkflowDispatch(
-	octokit: ProbotOctokit,
-	params: Parameters<ProbotOctokit['rest']['actions']['createWorkflowDispatch']>[0] & {
-		return_run_details: true;
-	}
+  octokit: ProbotOctokit,
+  params: Parameters<
+    ProbotOctokit["rest"]["actions"]["createWorkflowDispatch"]
+  >[0] & {
+    return_run_details: true;
+  },
 ): Promise<CreateWorkflowDispatchResult>;
 
 /**
@@ -88,16 +92,18 @@ export async function createWorkflowDispatch(
  * @returns If `params.return_run_details` is true, returns an object of the created workflow run. Otherwise, returns undefined.
  */
 export async function createWorkflowDispatch(
-	octokit: ProbotOctokit,
-	params: Parameters<ProbotOctokit['rest']['actions']['createWorkflowDispatch']>[0] & {
-		return_run_details?: boolean;
-	}
+  octokit: ProbotOctokit,
+  params: Parameters<
+    ProbotOctokit["rest"]["actions"]["createWorkflowDispatch"]
+  >[0] & {
+    return_run_details?: boolean;
+  },
 ): Promise<CreateWorkflowDispatchResult | undefined> {
-	const { data } = await octokit.rest.actions.createWorkflowDispatch(params);
-	if (!params?.return_run_details) {
-		return undefined;
-	}
-	return data as unknown as CreateWorkflowDispatchResult;
+  const { data } = await octokit.rest.actions.createWorkflowDispatch(params);
+  if (!params?.return_run_details) {
+    return undefined;
+  }
+  return data as unknown as CreateWorkflowDispatchResult;
 }
 
 /**
@@ -110,20 +116,22 @@ export async function createWorkflowDispatch(
  * @returns The matching artifact ID, or null if not found
  */
 export async function findArtifactByName(
-	octokit: ProbotOctokit,
-	params: {
-		repo: Repo;
-		workflowRunId: number;
-		artifactName: string;
-	}
+  octokit: ProbotOctokit,
+  params: {
+    repo: Repo;
+    workflowRunId: number;
+    artifactName: string;
+  },
 ): Promise<number | null> {
-	const { repo, workflowRunId, artifactName } = params;
-	const response = await octokit.rest.actions.listWorkflowRunArtifacts({
-		owner: repo.owner,
-		repo: repo.repo,
-		run_id: workflowRunId
-	});
-	return response.data.artifacts.find((a) => a.name === artifactName)?.id ?? null;
+  const { repo, workflowRunId, artifactName } = params;
+  const response = await octokit.rest.actions.listWorkflowRunArtifacts({
+    owner: repo.owner,
+    repo: repo.repo,
+    run_id: workflowRunId,
+  });
+  return (
+    response.data.artifacts.find((a) => a.name === artifactName)?.id ?? null
+  );
 }
 
 /**
@@ -136,30 +144,30 @@ export async function findArtifactByName(
  * @returns The file content as a Buffer, or null if not found
  */
 export async function downloadArtifactFile(
-	octokit: ProbotOctokit,
-	params: {
-		repo: Repo;
-		artifactId: number;
-		filePath: string;
-	}
+  octokit: ProbotOctokit,
+  params: {
+    repo: Repo;
+    artifactId: number;
+    filePath: string;
+  },
 ): Promise<Buffer | null> {
-	const { repo, artifactId, filePath } = params;
-	const response = (await octokit.rest.actions.downloadArtifact({
-		owner: repo.owner,
-		repo: repo.repo,
-		artifact_id: artifactId,
-		archive_format: 'zip',
-		request: {
-			redirect: 'follow'
-		}
-	})) as unknown as { data: ArrayBuffer };
-	const buffer = Buffer.from(response.data);
-	const zip = new AdmZip(buffer);
-	const file = zip.getEntries().find((entry) => entry.entryName === filePath);
-	if (!file) {
-		return null;
-	}
-	return file.getData();
+  const { repo, artifactId, filePath } = params;
+  const response = (await octokit.rest.actions.downloadArtifact({
+    owner: repo.owner,
+    repo: repo.repo,
+    artifact_id: artifactId,
+    archive_format: "zip",
+    request: {
+      redirect: "follow",
+    },
+  })) as unknown as { data: ArrayBuffer };
+  const buffer = Buffer.from(response.data);
+  const zip = new AdmZip(buffer);
+  const file = zip.getEntries().find((entry) => entry.entryName === filePath);
+  if (!file) {
+    return null;
+  }
+  return file.getData();
 }
 
 /**
@@ -168,9 +176,9 @@ export async function downloadArtifactFile(
  * These should match the inputs defined in `.github/workflows/devcontainer-check.yaml`
  */
 export interface WorkflowInputs {
-	owner: string;
-	repo: string;
-	sha: string;
+  owner: string;
+  repo: string;
+  sha: string;
 }
 
 /**
@@ -184,38 +192,41 @@ export interface WorkflowInputs {
  * @returns The parsed workflow inputs, or null if retrieval failed
  */
 export async function fetchInputs(
-	octokit: ProbotOctokit,
-	params: {
-		repo: Repo;
-		workflowRunId: number;
-		artifactName: string;
-		artifactPath: string;
-	}
+  octokit: ProbotOctokit,
+  params: {
+    repo: Repo;
+    workflowRunId: number;
+    artifactName: string;
+    artifactPath: string;
+  },
 ): Promise<WorkflowInputs | null> {
-	const { repo, workflowRunId, artifactName, artifactPath } = params;
-	const artifactId = await findArtifactByName(octokit, {
-		repo,
-		workflowRunId,
-		artifactName
-	});
-	if (artifactId === null) {
-		return null;
-	}
-	const buffer = await downloadArtifactFile(octokit, {
-		repo,
-		artifactId,
-		filePath: artifactPath
-	});
-	if (!buffer) {
-		return null;
-	}
-	try {
-		return JSON.parse(buffer.toString('utf-8')) as WorkflowInputs;
-	} catch (error) {
-		throw new Error(`Failed to parse workflow inputs from artifact file: ${errorToString(error)}`, {
-			cause: error
-		});
-	}
+  const { repo, workflowRunId, artifactName, artifactPath } = params;
+  const artifactId = await findArtifactByName(octokit, {
+    repo,
+    workflowRunId,
+    artifactName,
+  });
+  if (artifactId === null) {
+    return null;
+  }
+  const buffer = await downloadArtifactFile(octokit, {
+    repo,
+    artifactId,
+    filePath: artifactPath,
+  });
+  if (!buffer) {
+    return null;
+  }
+  try {
+    return JSON.parse(buffer.toString("utf-8")) as WorkflowInputs;
+  } catch (error) {
+    throw new Error(
+      `Failed to parse workflow inputs from artifact file: ${errorToString(error)}`,
+      {
+        cause: error,
+      },
+    );
+  }
 }
 
 /**
@@ -230,84 +241,84 @@ export async function fetchInputs(
  * @param params.checkRunName Name of the check run to create. Defaults to CHECK_RUN_NAME.
  */
 export async function dispatchCheckWorkflow(
-	context: Readonly<Context>,
-	params: {
-		repo: Repo;
-		sha: string;
-		runnerRepo: Repo;
-		workflowName: string;
-		workflowRef: string;
-		checkRunName?: string;
-	}
+  context: Readonly<Context>,
+  params: {
+    repo: Repo;
+    sha: string;
+    runnerRepo: Repo;
+    workflowName: string;
+    workflowRef: string;
+    checkRunName?: string;
+  },
 ): Promise<void> {
-	const { octokit, log } = context;
-	const {
-		repo,
-		sha,
-		runnerRepo,
-		workflowName,
-		workflowRef: resolvedRunnerRefRaw,
-		checkRunName = CHECK_RUN_NAME
-	} = params;
+  const { octokit, log } = context;
+  const {
+    repo,
+    sha,
+    runnerRepo,
+    workflowName,
+    workflowRef: resolvedRunnerRefRaw,
+    checkRunName = CHECK_RUN_NAME,
+  } = params;
 
-	// Resolve runner workflow ref
-	let runnerRef = resolvedRunnerRefRaw;
-	if (runnerRef === DEFAULT_BRANCH_ALIAS) {
-		const { data: runnerRepoDetail } = await octokit.rest.repos.get({
-			owner: runnerRepo.owner,
-			repo: runnerRepo.repo
-		});
-		runnerRef = runnerRepoDetail.default_branch;
-	}
-	log.debug(`Resolved runner ref: ${runnerRef}`);
+  // Resolve runner workflow ref
+  let runnerRef = resolvedRunnerRefRaw;
+  if (runnerRef === DEFAULT_BRANCH_ALIAS) {
+    const { data: runnerRepoDetail } = await octokit.rest.repos.get({
+      owner: runnerRepo.owner,
+      repo: runnerRepo.repo,
+    });
+    runnerRef = runnerRepoDetail.default_branch;
+  }
+  log.debug(`Resolved runner ref: ${runnerRef}`);
 
-	const inputs: WorkflowInputs = { owner: repo.owner, repo: repo.repo, sha };
-	log.info(
-		`Triggering workflow ${workflowName} in ${runnerRepo.toFullName()}@${runnerRef}` +
-			` with inputs: ${JSON.stringify(inputs)}`
-	);
+  const inputs: WorkflowInputs = { owner: repo.owner, repo: repo.repo, sha };
+  log.info(
+    `Triggering workflow ${workflowName} in ${runnerRepo.toFullName()}@${runnerRef}` +
+      ` with inputs: ${JSON.stringify(inputs)}`,
+  );
 
-	// Dispatch the workflow
-	let workflowRunUrl: string | undefined;
-	try {
-		const workflowDispatchResult = await createWorkflowDispatch(octokit, {
-			owner: runnerRepo.owner,
-			repo: runnerRepo.repo,
-			workflow_id: workflowName,
-			ref: runnerRef,
-			inputs: inputs as unknown as Record<string, unknown>,
-			return_run_details: true
-		});
-		workflowRunUrl = workflowDispatchResult?.html_url;
-	} catch (error) {
-		log.error(`Failed to dispatch workflow: ${errorToString(error)}`);
-		await octokit.rest.checks.create({
-			owner: repo.owner,
-			repo: repo.repo,
-			head_sha: sha,
-			name: checkRunName,
-			status: 'completed',
-			conclusion: 'failure',
-			output: {
-				title: 'Dev container configuration check failed to start.',
-				summary: `Failed to dispatch the validation workflow: ${errorToString(error)}`
-			}
-		});
-		return;
-	}
+  // Dispatch the workflow
+  let workflowRunUrl: string | undefined;
+  try {
+    const workflowDispatchResult = await createWorkflowDispatch(octokit, {
+      owner: runnerRepo.owner,
+      repo: runnerRepo.repo,
+      workflow_id: workflowName,
+      ref: runnerRef,
+      inputs: inputs as unknown as Record<string, unknown>,
+      return_run_details: true,
+    });
+    workflowRunUrl = workflowDispatchResult?.html_url;
+  } catch (error) {
+    log.error(`Failed to dispatch workflow: ${errorToString(error)}`);
+    await octokit.rest.checks.create({
+      owner: repo.owner,
+      repo: repo.repo,
+      head_sha: sha,
+      name: checkRunName,
+      status: "completed",
+      conclusion: "failure",
+      output: {
+        title: "Dev container configuration check failed to start.",
+        summary: `Failed to dispatch the validation workflow: ${errorToString(error)}`,
+      },
+    });
+    return;
+  }
 
-	// Create a check run in progress with a link to the workflow run
-	await octokit.rest.checks.create({
-		owner: repo.owner,
-		repo: repo.repo,
-		head_sha: sha,
-		name: checkRunName,
-		status: 'in_progress',
-		details_url: workflowRunUrl,
-		output: {
-			title: 'Checking for dev container configuration...',
-			summary: 'Check is in progress. This might take a few minutes.'
-		}
-	});
-	log.info('Workflow dispatch event created successfully.');
+  // Create a check run in progress with a link to the workflow run
+  await octokit.rest.checks.create({
+    owner: repo.owner,
+    repo: repo.repo,
+    head_sha: sha,
+    name: checkRunName,
+    status: "in_progress",
+    details_url: workflowRunUrl,
+    output: {
+      title: "Checking for dev container configuration...",
+      summary: "Check is in progress. This might take a few minutes.",
+    },
+  });
+  log.info("Workflow dispatch event created successfully.");
 }

@@ -1,8 +1,8 @@
-import type { Logger } from 'pino';
-import type { ProbotOctokit } from 'probot';
-import { Context } from 'probot';
-import { AppConfig } from '../config.js';
-import { Repo } from '../lib/github.js';
+import type { Logger } from "pino";
+import type { ProbotOctokit } from "probot";
+import { Context } from "probot";
+import { AppConfig } from "../config.js";
+import { Repo } from "../lib/github.js";
 
 /**
  * Base class for webhook event handlers.
@@ -12,167 +12,170 @@ import { Repo } from '../lib/github.js';
  * threaded through the config object or duplicated across handlers.
  */
 export abstract class BaseHandler<C extends Context = Context> {
-	/** The Probot event context for the current webhook delivery. */
-	protected readonly context: C;
-	/** Validated application configuration. */
-	protected readonly appConfig: AppConfig;
-	/** Octokit instance bound to the installation that triggered the event. */
-	protected readonly octokit: ProbotOctokit;
-	/** Logger bound to the event. */
-	protected readonly log: Logger;
+  /** The Probot event context for the current webhook delivery. */
+  protected readonly context: C;
+  /** Validated application configuration. */
+  protected readonly appConfig: AppConfig;
+  /** Octokit instance bound to the installation that triggered the event. */
+  protected readonly octokit: ProbotOctokit;
+  /** Logger bound to the event. */
+  protected readonly log: Logger;
 
-	constructor(context: C, appConfig: AppConfig) {
-		this.context = context;
-		this.appConfig = appConfig;
-		this.octokit = context.octokit;
-		this.log = context.log;
-	}
+  constructor(context: C, appConfig: AppConfig) {
+    this.context = context;
+    this.appConfig = appConfig;
+    this.octokit = context.octokit;
+    this.log = context.log;
+  }
 
-	/**
-	 * Handle the webhook event. Implemented by concrete handler subclasses.
-	 */
-	abstract handle(): Promise<void>;
+  /**
+   * Handle the webhook event. Implemented by concrete handler subclasses.
+   */
+  abstract handle(): Promise<void>;
 
-	/**
-	 * Executes the handler after verifying that the event originated from an authorized principal.
-	 * If unauthorized, the event is skipped.
-	 */
-	public async execute(): Promise<void> {
-		if (!this.isAuthorized()) {
-			this.log.warn(
-				`Skipping event processing for unauthorized principal: "${this.getPrincipal() ?? 'unknown'}"`
-			);
-			return;
-		}
-		await this.handle();
-	}
+  /**
+   * Executes the handler after verifying that the event originated from an authorized principal.
+   * If unauthorized, the event is skipped.
+   */
+  public async execute(): Promise<void> {
+    if (!this.isAuthorized()) {
+      this.log.warn(
+        `Skipping event processing for unauthorized principal: "${this.getPrincipal() ?? "unknown"}"`,
+      );
+      return;
+    }
+    await this.handle();
+  }
 
-	/**
-	 * Checks if the current installation principal is authorized under ALLOWED_PRINCIPALS.
-	 * @returns true if authorized or if allowlist is unrestricted ('*')
-	 */
-	public isAuthorized(): boolean {
-		const allowedPrincipals = this.appConfig.ALLOWED_PRINCIPALS;
-		if (allowedPrincipals.includes('*')) {
-			return true;
-		}
+  /**
+   * Checks if the current installation principal is authorized under ALLOWED_PRINCIPALS.
+   * @returns true if authorized or if allowlist is unrestricted ('*')
+   */
+  public isAuthorized(): boolean {
+    const allowedPrincipals = this.appConfig.ALLOWED_PRINCIPALS;
+    if (allowedPrincipals.includes("*")) {
+      return true;
+    }
 
-		const principal = this.getPrincipal();
-		if (!principal) {
-			return false;
-		}
+    const principal = this.getPrincipal();
+    if (!principal) {
+      return false;
+    }
 
-		return allowedPrincipals.includes(principal);
-	}
+    return allowedPrincipals.includes(principal);
+  }
 
-	/**
-	 * Retrieves the principal (login) of the installation account, repository owner, or organization from the context payload.
-	 * @returns The lowercase principal login or null if not available.
-	 */
-	public getPrincipal(): string | null {
-		const payload = this.context.payload as {
-			installation?: {
-				account?: {
-					login?: string;
-				} | null;
-			};
-			repository?: {
-				owner?: {
-					login?: string;
-				} | null;
-			};
-			organization?: {
-				login?: string;
-			};
-		};
+  /**
+   * Retrieves the principal (login) of the installation account, repository owner, or organization from the context payload.
+   * @returns The lowercase principal login or null if not available.
+   */
+  public getPrincipal(): string | null {
+    const payload = this.context.payload as {
+      installation?: {
+        account?: {
+          login?: string;
+        } | null;
+      };
+      repository?: {
+        owner?: {
+          login?: string;
+        } | null;
+      };
+      organization?: {
+        login?: string;
+      };
+    };
 
-		const accountLogin = payload?.installation?.account?.login;
-		if (accountLogin && typeof accountLogin === 'string') {
-			return accountLogin.toLowerCase();
-		}
+    const accountLogin = payload?.installation?.account?.login;
+    if (accountLogin && typeof accountLogin === "string") {
+      return accountLogin.toLowerCase();
+    }
 
-		const repoOwner = payload?.repository?.owner?.login;
-		if (repoOwner && typeof repoOwner === 'string') {
-			return repoOwner.toLowerCase();
-		}
+    const repoOwner = payload?.repository?.owner?.login;
+    if (repoOwner && typeof repoOwner === "string") {
+      return repoOwner.toLowerCase();
+    }
 
-		const orgLogin = payload?.organization?.login;
-		if (orgLogin && typeof orgLogin === 'string') {
-			return orgLogin.toLowerCase();
-		}
+    const orgLogin = payload?.organization?.login;
+    if (orgLogin && typeof orgLogin === "string") {
+      return orgLogin.toLowerCase();
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	/**
-	 * Returns the owner/repo of the repository the event was delivered for.
-	 * @returns The owner and repo of the event's repository
-	 */
-	protected repo(): Repo {
-		return Repo.fromContext(this.context);
-	}
+  /**
+   * Returns the owner/repo of the repository the event was delivered for.
+   * @returns The owner and repo of the event's repository
+   */
+  protected repo(): Repo {
+    return Repo.fromContext(this.context);
+  }
 
-	/**
-	 * Resolves the runner repository to dispatch the check workflow to for the given
-	 * target repository and its visibility.
-	 *
-	 * Public targets use `RUNNER_REPOSITORY`. Private or internal targets use
-	 * `RUNNER_REPOSITORY_FOR_PRIVATE` when configured; when it is not set, a warning is logged
-	 * and `null` is returned so the caller skips dispatching. The `RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE`
-	 * toggle overrides this guardrail and dispatches private/internal targets to the public runner instead.
-	 * @param repo The target repository the check is for
-	 * @param visibility Visibility of the target repository ('public', 'private', or 'internal')
-	 * @returns The resolved runner repository, or null if no runner is configured for the target
-	 */
-	public getRunnerFor(repo: Repo, visibility: 'public' | 'private' | 'internal'): Repo | null {
-		const publicRunner = this.appConfig.RUNNER_REPOSITORY;
-		if (visibility === 'public') {
-			this.log.debug(
-				`Resolved to public runner ${publicRunner.toFullName()} for target ${repo.toFullName()} (${visibility})`
-			);
-			return publicRunner;
-		}
+  /**
+   * Resolves the runner repository to dispatch the check workflow to for the given
+   * target repository and its visibility.
+   *
+   * Public targets use `RUNNER_REPOSITORY`. Private or internal targets use
+   * `RUNNER_REPOSITORY_FOR_PRIVATE` when configured; when it is not set, a warning is logged
+   * and `null` is returned so the caller skips dispatching. The `RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE`
+   * toggle overrides this guardrail and dispatches private/internal targets to the public runner instead.
+   * @param repo The target repository the check is for
+   * @param visibility Visibility of the target repository ('public', 'private', or 'internal')
+   * @returns The resolved runner repository, or null if no runner is configured for the target
+   */
+  public getRunnerFor(
+    repo: Repo,
+    visibility: "public" | "private" | "internal",
+  ): Repo | null {
+    const publicRunner = this.appConfig.RUNNER_REPOSITORY;
+    if (visibility === "public") {
+      this.log.debug(
+        `Resolved to public runner ${publicRunner.toFullName()} for target ${repo.toFullName()} (${visibility})`,
+      );
+      return publicRunner;
+    }
 
-		// Private or internal target repository
-		const privateRunner = this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE;
-		if (privateRunner) {
-			this.log.debug(
-				`Resolved to private runner ${privateRunner.toFullName()} for target ${repo.toFullName()} (${visibility})`
-			);
-			return privateRunner;
-		}
+    // Private or internal target repository
+    const privateRunner = this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE;
+    if (privateRunner) {
+      this.log.debug(
+        `Resolved to private runner ${privateRunner.toFullName()} for target ${repo.toFullName()} (${visibility})`,
+      );
+      return privateRunner;
+    }
 
-		// No private runner configured: fall back to the public runner when the guardrail is disabled.
-		if (this.appConfig.RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE) {
-			this.log.warn(
-				`No private runner configured for target ${repo.toFullName()} (${visibility}); dispatching to the public runner (RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE).`
-			);
-			return this.appConfig.RUNNER_REPOSITORY;
-		}
+    // No private runner configured: fall back to the public runner when the guardrail is disabled.
+    if (this.appConfig.RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE) {
+      this.log.warn(
+        `No private runner configured for target ${repo.toFullName()} (${visibility}); dispatching to the public runner (RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE).`,
+      );
+      return this.appConfig.RUNNER_REPOSITORY;
+    }
 
-		this.log.warn(
-			`No matching runner found for target ${repo.toFullName()} (${visibility}); set RUNNER_REPOSITORY_FOR_PRIVATE, or RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE, to enable checks for ${visibility} repositories.`
-		);
-		return null;
-	}
+    this.log.warn(
+      `No matching runner found for target ${repo.toFullName()} (${visibility}); set RUNNER_REPOSITORY_FOR_PRIVATE, or RUNNER_REPOSITORY_USE_PUBLIC_FOR_PRIVATE, to enable checks for ${visibility} repositories.`,
+    );
+    return null;
+  }
 
-	/**
-	 * Checks if the given repository matches one of the configured runner repositories.
-	 * @param repo Repository info with owner and repo name
-	 * @returns true if the repo matches a configured runner repository
-	 */
-	public isRunnerRepo(repo: Repo): boolean {
-		if (repo.equals(this.appConfig.RUNNER_REPOSITORY)) {
-			return true;
-		}
+  /**
+   * Checks if the given repository matches one of the configured runner repositories.
+   * @param repo Repository info with owner and repo name
+   * @returns true if the repo matches a configured runner repository
+   */
+  public isRunnerRepo(repo: Repo): boolean {
+    if (repo.equals(this.appConfig.RUNNER_REPOSITORY)) {
+      return true;
+    }
 
-		if (
-			this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE &&
-			repo.equals(this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE)
-		) {
-			return true;
-		}
+    if (
+      this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE &&
+      repo.equals(this.appConfig.RUNNER_REPOSITORY_FOR_PRIVATE)
+    ) {
+      return true;
+    }
 
-		return false;
-	}
+    return false;
+  }
 }
