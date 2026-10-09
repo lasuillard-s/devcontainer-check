@@ -157,6 +157,7 @@ jobs:
         with:
           script: |
             const fs = require('node:fs');
+            const path = require('node:path');
             const crypto = require('node:crypto');
 
             const { RUNNER_TEMP } = process.env;
@@ -197,19 +198,158 @@ jobs:
               return;
             }
 
-            // Calculate the hash
+            // Calculate the configuration hash
             const stableConfig = stableStringify(sanitize(config));
             core.debug(`Stable dev container configuration: ${JSON.stringify(stableConfig, null, 2)}`);
 
             const serialized = JSON.stringify(stableConfig, null, 2);
             core.debug(`Serialized dev container configuration: ${serialized}`);
 
-            const hash = crypto.createHash('sha256').update(serialized).digest('hex');
-            if (!hash) {
+            const configHash = crypto.createHash('sha256').update(serialized).digest('hex');
+            if (!configHash) {
               core.setFailed('Failed to calculate configuration hash. The dev container configuration might be invalid.');
               return;
             }
-            core.setOutput('config-hash', hash);
+            core.info(`Configuration hash: ${configHash}`);
+
+            // Collect all relevant files that the Dev Container configuration relies on
+            const getFilesInDir = (dir) => {
+              const results = [];
+              if (!fs.existsSync(dir)) return results;
+              const list = fs.readdirSync(dir, { withFileTypes: true });
+              for (const dirent of list) {
+                const fullPath = path.join(dir, dirent.name);
+                try {
+                  const stat = fs.statSync(fullPath);
+                  if (stat.isDirectory()) {
+                    results.push(...getFilesInDir(fullPath));
+                  } else if (stat.isFile()) {
+                    results.push(path.relative('.', fullPath).split(path.sep).join('/'));
+                  }
+                } catch {}
+              }
+              return results;
+            };
+
+            const filesSet = new Set();
+            const devcontainerDir = '.devcontainer';
+            const devcontainerFiles = getFilesInDir(devcontainerDir);
+            for (const file of devcontainerFiles) {
+              // Exclude devcontainer.json as it is already covered by sanitized configHash
+              if (!file.endsWith('/devcontainer.json') && file !== 'devcontainer.json' && file !== '.devcontainer.json') {
+                filesSet.add(file);
+              }
+            }
+
+            const checkAndAdd = (targetPath) => {
+              if (!targetPath || typeof targetPath !== 'string') return;
+              try {
+                const resolved = path.resolve(targetPath);
+                const relative = path.relative('.', resolved).split(path.sep).join('/');
+                if (!relative.startsWith('..') && fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
+                  if (!relative.endsWith('/devcontainer.json') && relative !== 'devcontainer.json' && relative !== '.devcontainer.json') {
+                    filesSet.add(relative);
+                  }
+                }
+              } catch {}
+            };
+
+            const extractTokens = (val) => {
+              if (!val) return;
+              if (typeof val === 'string') {
+                for (const token of val.split(/\s+/)) {
+                  const cleaned = token.replace(/^['"]|['"]$/g, '');
+                  checkAndAdd(path.join(devcontainerDir, cleaned));
+                  checkAndAdd(cleaned);
+                }
+              } else if (Array.isArray(val)) {
+                for (const item of val) extractTokens(item);
+              } else if (typeof val === 'object') {
+                for (const item of Object.values(val)) extractTokens(item);
+              }
+            };
+
+            const cfg = config.configuration ?? {};
+            const merged = config.mergedConfiguration ?? {};
+
+            // Dockerfile references
+            const dockerfile = cfg.build?.dockerfile ?? merged.build?.dockerfile ?? cfg.dockerFile ?? merged.dockerFile;
+            const context = cfg.build?.context ?? merged.build?.context ?? cfg.context ?? merged.context;
+            if (dockerfile) {
+              if (context) checkAndAdd(path.join(devcontainerDir, context, dockerfile));
+              checkAndAdd(path.join(devcontainerDir, dockerfile));
+              checkAndAdd(dockerfile);
+            }
+
+            // Docker Compose file references
+            const composeFiles = cfg.dockerComposeFile ?? merged.dockerComposeFile;
+            if (composeFiles) {
+              const list = Array.isArray(composeFiles) ? composeFiles : [composeFiles];
+              for (const file of list) {
+                checkAndAdd(path.join(devcontainerDir, file));
+                checkAndAdd(file);
+              }
+            }
+
+            // Lifecycle command scripts
+            const lifecycleValues = [
+              cfg.initializeCommand,
+              merged.initializeCommand,
+              cfg.onCreateCommand,
+              merged.onCreateCommands,
+              cfg.updateContentCommand,
+              merged.updateContentCommands,
+              cfg.postCreateCommand,
+              merged.postCreateCommands,
+              cfg.postStartCommand,
+              merged.postStartCommands,
+              cfg.postAttachCommand,
+              merged.postAttachCommands,
+            ];
+            for (const cmd of lifecycleValues) {
+              extractTokens(cmd);
+            }
+
+            // Mounts (bind mounts pointing to local workspace files)
+            const mounts = cfg.mounts ?? merged.mounts ?? [];
+            for (const mount of mounts) {
+              if (typeof mount === 'string') {
+                const match = mount.match(/source=([^,]+)/);
+                if (match) {
+                  const src = match[1].replace(/\$\{localWorkspaceFolder\}|\$\{workspaceFolder\}/g, '.');
+                  checkAndAdd(src);
+                }
+              } else if (mount && typeof mount === 'object' && mount.source) {
+                const src = mount.source.replace(/\$\{localWorkspaceFolder\}|\$\{workspaceFolder\}/g, '.');
+                checkAndAdd(src);
+              }
+            }
+
+            // Dev container lockfile references
+            checkAndAdd(path.join(devcontainerDir, 'devcontainer-lock.json'));
+            checkAndAdd('devcontainer-lock.json');
+            checkAndAdd('.devcontainer-lock.json');
+
+            // Calculate hash of relevant files sorted in lexicographical order
+            const sortedFiles = Array.from(filesSet).sort((a, b) => a.localeCompare(b));
+            core.info(`Found ${sortedFiles.length} relevant files for hashing: ${JSON.stringify(sortedFiles)}`);
+
+            const fileEntries = [];
+            for (const fileName of sortedFiles) {
+              const fileContent = fs.readFileSync(fileName);
+              const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
+              fileEntries.push(`${fileName}:${fileHash}`);
+            }
+
+            const filesString = fileEntries.join('&');
+            const filesHash = crypto.createHash('sha256').update(filesString).digest('hex');
+            core.info(`Files hash: ${filesHash}`);
+
+            // Calculate final chained hash: hash(hash(configuration) + hash(files))
+            const finalHash = crypto.createHash('sha256').update(configHash + filesHash).digest('hex');
+            core.info(`Final chained hash: ${finalHash}`);
+
+            core.setOutput('config-hash', finalHash);
 
       # Restore previous check result from cache and re-use it
       - name: Restore previous check result from cache
