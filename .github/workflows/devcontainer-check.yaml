@@ -274,9 +274,9 @@ jobs:
 
             // Dockerfile references
             const dockerfile = cfg.build?.dockerfile ?? merged.build?.dockerfile ?? cfg.dockerFile ?? merged.dockerFile;
-            const context = cfg.build?.context ?? merged.build?.context ?? cfg.context ?? merged.context;
+            const buildContext = cfg.build?.context ?? merged.build?.context ?? cfg.context ?? merged.context;
             if (dockerfile) {
-              if (context) checkAndAdd(path.join(devcontainerDir, context, dockerfile));
+              if (buildContext) checkAndAdd(path.join(devcontainerDir, buildContext, dockerfile));
               checkAndAdd(path.join(devcontainerDir, dockerfile));
               checkAndAdd(dockerfile);
             }
