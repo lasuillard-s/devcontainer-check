@@ -132,6 +132,20 @@ jobs:
               core.setOutput('using-devcontainer', 'true');
               return;
             }
+            if (fs.existsSync('.devcontainer.json')) {
+              core.info('Found .devcontainer.json, staging to .devcontainer/devcontainer.json.');
+              fs.mkdirSync('.devcontainer', { recursive: true });
+              fs.copyFileSync('.devcontainer.json', '.devcontainer/devcontainer.json');
+              core.setOutput('using-devcontainer', 'true');
+              return;
+            }
+            if (fs.existsSync('.devcontainer.example.json')) {
+              core.info('Found .devcontainer.example.json, staging to .devcontainer/devcontainer.json.');
+              fs.mkdirSync('.devcontainer', { recursive: true });
+              fs.copyFileSync('.devcontainer.example.json', '.devcontainer/devcontainer.json');
+              core.setOutput('using-devcontainer', 'true');
+              return;
+            }
             core.info('No dev container configuration found in the repository.');
             core.setOutput('using-devcontainer', 'false');
 
@@ -213,17 +227,40 @@ jobs:
             core.info(`Configuration hash: ${configHash}`);
 
             // Collect all relevant files that the Dev Container configuration relies on
-            const getFilesInDir = (dir) => {
+            const getFilesInDir = (dir, visited = new Set()) => {
               const results = [];
               if (!fs.existsSync(dir)) return results;
-              const list = fs.readdirSync(dir, { withFileTypes: true });
+              try {
+                const realDir = fs.realpathSync(dir);
+                if (visited.has(realDir)) return results;
+                visited.add(realDir);
+              } catch {
+                return results;
+              }
+              let list;
+              try {
+                list = fs.readdirSync(dir, { withFileTypes: true });
+              } catch {
+                return results;
+              }
               for (const dirent of list) {
                 const fullPath = path.join(dir, dirent.name);
                 try {
-                  const stat = fs.statSync(fullPath);
-                  if (stat.isDirectory()) {
-                    results.push(...getFilesInDir(fullPath));
-                  } else if (stat.isFile()) {
+                  if (dirent.isSymbolicLink()) {
+                    const realTarget = fs.realpathSync(fullPath);
+                    const relToRoot = path.relative('.', realTarget);
+                    if (relToRoot.startsWith('..') || path.isAbsolute(relToRoot)) {
+                      continue; // Outside repository checkout boundary
+                    }
+                    const targetStat = fs.statSync(realTarget);
+                    if (targetStat.isDirectory()) {
+                      results.push(...getFilesInDir(realTarget, visited));
+                    } else if (targetStat.isFile()) {
+                      results.push(path.relative('.', fullPath).split(path.sep).join('/'));
+                    }
+                  } else if (dirent.isDirectory()) {
+                    results.push(...getFilesInDir(fullPath, visited));
+                  } else if (dirent.isFile()) {
                     results.push(path.relative('.', fullPath).split(path.sep).join('/'));
                   }
                 } catch {}
@@ -310,20 +347,6 @@ jobs:
               extractTokens(cmd);
             }
 
-            // Mounts (bind mounts pointing to local workspace files)
-            const mounts = cfg.mounts ?? merged.mounts ?? [];
-            for (const mount of mounts) {
-              if (typeof mount === 'string') {
-                const match = mount.match(/source=([^,]+)/);
-                if (match) {
-                  const src = match[1].replace(/\$\{localWorkspaceFolder\}|\$\{workspaceFolder\}/g, '.');
-                  checkAndAdd(src);
-                }
-              } else if (mount && typeof mount === 'object' && mount.source) {
-                const src = mount.source.replace(/\$\{localWorkspaceFolder\}|\$\{workspaceFolder\}/g, '.');
-                checkAndAdd(src);
-              }
-            }
 
             // Dev container lockfile references
             checkAndAdd(path.join(devcontainerDir, 'devcontainer-lock.json'));
