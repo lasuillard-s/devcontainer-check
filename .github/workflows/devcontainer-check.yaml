@@ -124,26 +124,27 @@ jobs:
             if (fs.existsSync('.devcontainer')) {
               core.info('Found .devcontainer directory, using it as the dev container configuration.');
               core.setOutput('using-devcontainer', 'true');
+              core.setOutput('config-path', '.devcontainer/devcontainer.json');
               return;
             }
             if (fs.existsSync('.devcontainer.example')) {
               core.info('Found .devcontainer.example directory, using it as the dev container configuration.');
               fs.cpSync('.devcontainer.example', '.devcontainer', { recursive: true });
               core.setOutput('using-devcontainer', 'true');
+              core.setOutput('config-path', '.devcontainer/devcontainer.json');
               return;
             }
             if (fs.existsSync('.devcontainer.json')) {
-              core.info('Found .devcontainer.json, staging to .devcontainer/devcontainer.json.');
-              fs.mkdirSync('.devcontainer', { recursive: true });
-              fs.copyFileSync('.devcontainer.json', '.devcontainer/devcontainer.json');
+              core.info('Found .devcontainer.json, using it as the dev container configuration.');
               core.setOutput('using-devcontainer', 'true');
+              core.setOutput('config-path', '.devcontainer.json');
               return;
             }
             if (fs.existsSync('.devcontainer.example.json')) {
-              core.info('Found .devcontainer.example.json, staging to .devcontainer/devcontainer.json.');
-              fs.mkdirSync('.devcontainer', { recursive: true });
-              fs.copyFileSync('.devcontainer.example.json', '.devcontainer/devcontainer.json');
+              core.info('Found .devcontainer.example.json, using it as the dev container configuration.');
+              fs.copyFileSync('.devcontainer.example.json', '.devcontainer.json');
               core.setOutput('using-devcontainer', 'true');
+              core.setOutput('config-path', '.devcontainer.json');
               return;
             }
             core.info('No dev container configuration found in the repository.');
@@ -168,13 +169,15 @@ jobs:
           steps.resolve-config.outputs.using-devcontainer == 'true'
           && steps.read-config.outcome == 'success'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          CONFIG_PATH: ${{ steps.resolve-config.outputs.config-path }}
         with:
           script: |
             const fs = require('node:fs');
             const path = require('node:path');
             const crypto = require('node:crypto');
 
-            const { RUNNER_TEMP } = process.env;
+            const { RUNNER_TEMP, CONFIG_PATH } = process.env;
             const configPath = `${RUNNER_TEMP}/devcontainer-config.json`;
 
             // Sort keys to ensure the same configuration always produces the same hash
@@ -269,8 +272,8 @@ jobs:
             };
 
             const filesSet = new Set();
-            const devcontainerDir = '.devcontainer';
-            const devcontainerFiles = getFilesInDir(devcontainerDir);
+            const devcontainerDir = path.dirname(CONFIG_PATH);
+            const devcontainerFiles = devcontainerDir === '.' ? [] : getFilesInDir(devcontainerDir);
             for (const file of devcontainerFiles) {
               // Exclude devcontainer.json as it is already covered by sanitized configHash
               if (!file.endsWith('/devcontainer.json') && file !== 'devcontainer.json' && file !== '.devcontainer.json') {
@@ -451,7 +454,7 @@ jobs:
             schema_sha='c95ffeed1d059abfe9ffbe79762dc2fa4e7c2421' # Mar 20, 2026
             check-jsonschema \
               --schemafile "https://raw.githubusercontent.com/devcontainers/spec/${schema_sha}/schemas/devContainer.schema.json" \
-              .devcontainer/devcontainer.json
+              '${{ steps.resolve-config.outputs.config-path }}'
 
             echo 'Building and starting dev container...'
             devcontainer build --workspace-folder .
