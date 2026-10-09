@@ -19,5 +19,7 @@
         "HashiCorp.terraform"
       ]
     }
-  }
+  },
+  // TODO: For testing; remove this line before merge
+  "onCreateCommand": "./onCreateCommand.sh"
 }
