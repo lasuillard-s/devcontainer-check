@@ -54,19 +54,19 @@
     "@eslint/js": "10.0.1",
     "@types/adm-zip": "0.6.0",
     "@types/node": "24.19.2",
-    "@vitest/coverage-v8": "5.0.3",
-    "@vitest/ui": "5.0.3",
+    "@vitest/coverage-v8": "5.0.4",
+    "@vitest/ui": "5.0.4",
     "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-jsdoc": "65.3.0",
+    "eslint-plugin-jsdoc": "65.3.1",
     "globals": "17.13.0",
     "ioredis": "6.0.0",
     "nock": "14.0.17",
     "nodemon": "3.1.14",
     "prettier": "3.9.10",
     "smee-client": "5.0.0",
-    "typescript-eslint": "8.71.1",
+    "typescript-eslint": "8.71.2",
     "typescript": "6.0.3",
-    "vitest": "5.0.3"
+    "vitest": "5.0.4"
   },
   "overrides": {
     "@types/pg": "8.23.1"
