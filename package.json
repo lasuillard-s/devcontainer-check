@@ -33,7 +33,7 @@
   "type": "module",
   "dependencies": {
     "adm-zip": "0.6.1",
-    "minimatch": "10.2.6",
+    "minimatch": "11.0.1",
     "probot": "14.3.5",
     "zod": "4.6.7"
   },
