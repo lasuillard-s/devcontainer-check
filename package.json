@@ -34,7 +34,7 @@
   "dependencies": {
     "adm-zip": "0.6.1",
     "minimatch": "10.2.6",
-    "probot": "14.3.2",
+    "probot": "14.3.5",
     "zod": "4.6.7"
   },
   "devEngines": {
