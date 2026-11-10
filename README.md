@@ -1,6 +1,6 @@
 # Devcontainer Check
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![codecov](https://codecov.io/gh/lasuillard-s/devcontainer-check/graph/badge.svg?token=7k6RoJEdWj)](https://codecov.io/gh/lasuillard-s/devcontainer-check)
 
 A GitHub App that automates validation of your repository's Dev Container.
@@ -89,4 +89,4 @@ Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for more information about 
 
 Copyright (C) 2026 Yuchan Lee
 
-This project is licensed under the GNU General Public License v3.0. See the [LICENSE](./LICENSE) file for more details.
+This project is licensed under the GNU Affero General Public License v3.0. See the [LICENSE](./LICENSE) file for more details.
