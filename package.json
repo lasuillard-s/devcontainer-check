@@ -57,7 +57,7 @@
     "@vitest/coverage-v8": "5.1.0",
     "@vitest/ui": "5.1.0",
     "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-jsdoc": "65.4.4",
+    "eslint-plugin-jsdoc": "65.4.5",
     "globals": "17.14.0",
     "ioredis": "6.0.0",
     "nock": "14.0.17",
