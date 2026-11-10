@@ -32,10 +32,10 @@
   },
   "type": "module",
   "dependencies": {
-    "adm-zip": "0.6.1",
-    "minimatch": "11.0.5",
-    "probot": "14.3.7",
-    "zod": "4.6.7"
+    "adm-zip": "^0.6.1",
+    "minimatch": "^11.0.5",
+    "probot": "^14.3.7",
+    "zod": "^4.6.7"
   },
   "devEngines": {
     "runtime": {
@@ -50,25 +50,22 @@
     }
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.7",
-    "@eslint/js": "10.0.1",
-    "@types/adm-zip": "0.6.0",
-    "@types/node": "26.6.6",
-    "@vitest/coverage-v8": "5.1.0",
-    "@vitest/ui": "5.1.0",
-    "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-jsdoc": "65.4.4",
-    "globals": "17.14.0",
-    "ioredis": "6.0.0",
-    "nock": "14.0.17",
-    "nodemon": "3.1.14",
-    "prettier": "3.9.10",
-    "smee-client": "5.0.0",
-    "typescript-eslint": "8.72.1",
-    "typescript": "6.0.3",
-    "vitest": "5.1.0"
-  },
-  "overrides": {
-    "@types/pg": "8.23.1"
+    "@eslint/eslintrc": "^3.3.7",
+    "@eslint/js": "^10.0.1",
+    "@types/adm-zip": "^0.6.0",
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.1.0",
+    "@vitest/ui": "^5.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^65.4.4",
+    "globals": "^17.14.0",
+    "ioredis": "^6.0.0",
+    "nock": "^14.0.17",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.9.10",
+    "smee-client": "^5.0.0",
+    "typescript-eslint": "^8.72.1",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.0"
   }
 }
