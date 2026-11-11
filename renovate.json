@@ -31,50 +31,6 @@
   ],
   "packageRules": [
     {
-      "description": "Group non-major npm runtime dependencies",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchDepTypes": [
-        "dependencies"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "Runtime Dependencies (non-major)",
-      "groupSlug": "runtime-dependencies",
-      "automerge": false
-    },
-    {
-      "description": "Schedule custom-extracted workflow tools monthly",
-      "matchManagers": [
-        "custom.regex"
-      ],
-      "matchFileNames": [
-        ".github/workflows/**"
-      ],
-      "schedule": [
-        "* 9-17 1 * *"
-      ]
-    },
-    {
-      "description": "Group non-major workflow tool updates for manual review",
-      "matchManagers": [
-        "custom.regex"
-      ],
-      "matchFileNames": [
-        ".github/workflows/**"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "Workflow Tools (non-major)",
-      "groupSlug": "workflow-tools",
-      "automerge": false
-    },
-    {
       "description": "Group non-major Terraform provider updates monthly",
       "matchManagers": [
         "terraform"
@@ -91,6 +47,37 @@
       "schedule": [
         "* 9-17 1 * *"
       ]
+    },
+    {
+      "description": "Schedule custom-extracted workflow tools monthly",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        ".github/workflows/**"
+      ],
+      "schedule": [
+        "* 9-17 1 * *"
+      ]
+    },
+    {
+      "description": "Group non-major workflow tools requiring manual review",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        ".github/workflows/**"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "matchJsonata": [
+        "$not(automerge = true)"
+      ],
+      "groupName": "Workflow Tools (non-major)",
+      "groupSlug": "workflow-tools",
+      "automerge": false
     }
   ]
 }
